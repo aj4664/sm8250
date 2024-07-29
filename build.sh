@@ -201,7 +201,7 @@ scripts/config --file out/.config \
     -e MIGT \
     -e MIGT_ENERGY_MODEL \
     -e MIHW \
-    -e PACKAGE_RUNTIME_INFO \
+    -d PACKAGE_RUNTIME_INFO \
     -e BINDER_OPT \
     -e KPERFEVENTS \
     -e MILLET \
@@ -211,11 +211,13 @@ scripts/config --file out/.config \
     -d LOCALVERSION_AUTO \
     -d TOUCHSCREEN_COMMON \
     -e SF_BINDER \
+    -e XIAOMI_MIUI \
     -d MI_MEMORY_SYSFS \
     -e TASK_DELAY_ACCT \
     -e MIUI_ZRAM_MEMORY_TRACKING \
     -d CONFIG_MODULE_SIG_SHA512 \
     -d CONFIG_MODULE_SIG_HASH \
+    -d MI_FRAGMENTION \
 
 make $MAKE_ARGS -j$(nproc)
 
