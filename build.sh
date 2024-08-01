@@ -203,7 +203,7 @@ scripts/config --file out/.config \
     -e MIGT \
     -e MIGT_ENERGY_MODEL \
     -e MIHW \
-    -d PACKAGE_RUNTIME_INFO \
+    -e PACKAGE_RUNTIME_INFO \
     -e BINDER_OPT \
     -e KPERFEVENTS \
     -e MILLET \
@@ -219,7 +219,7 @@ scripts/config --file out/.config \
     -e MIUI_ZRAM_MEMORY_TRACKING \
     -d CONFIG_MODULE_SIG_SHA512 \
     -d CONFIG_MODULE_SIG_HASH \
-    -d MI_FRAGMENTION \
+    -e MI_FRAGMENTION \
 
 make $MAKE_ARGS -j$(nproc)
 
