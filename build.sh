@@ -93,21 +93,23 @@ else
     exit 1
 fi
 
-echo "Generating [out/arch/arm64/boot/dtb]......"
-find out/arch/arm64/boot/dts -name '*.dtb' -exec cat {} + >out/arch/arm64/boot/dtb
 
+rm -rf anykernel/kernels/
 
-rm -rf anykernel/kernels/miui
-rm -rf anykernel/kernels/aosp
-rm -rf anykernel/kernels/aospa
+mkdir -p anykernel/kernels/
 
-mkdir -p anykernel/kernels/aosp
-mkdir -p anykernel/kernels/aospa
+cp out/arch/arm64/boot/Image anykernel/kernels/
 
-cp out/arch/arm64/boot/Image anykernel/kernels/aosp
-cp out/arch/arm64/boot/dtb anykernel/kernels/aosp
-cp out/arch/arm64/boot/Image anykernel/kernels/aospa
-cp out/arch/arm64/boot/dtb anykernel/kernels/aospa
+cd anykernel 
+
+ZIP_FILENAME=Kernel_AOSP_${TARGET_DEVICE}_${KSU_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3.zip
+
+zip -r9 $ZIP_FILENAME ./* -x .git .gitignore out/ ./*.zip
+
+mv $ZIP_FILENAME ../
+
+cd ..
+
 
 echo "Build for AOSP finished."
 
@@ -230,18 +232,15 @@ else
     exit 1
 fi
 
-
-echo "Generating [out/arch/arm64/boot/dtb]......"
-find out/arch/arm64/boot/dts -name '*.dtb' -exec cat {} + >out/arch/arm64/boot/dtb
-
 # Restore modified dts
 rm -rf ${dts_source}
 mv .dts.bak ${dts_source}
 
+rm -rf anykernel/kernels/
+mkdir -p anykernel/kernels/
 
-mkdir -p anykernel/kernels/miui
-cp out/arch/arm64/boot/Image anykernel/kernels/miui
-cp out/arch/arm64/boot/dtb anykernel/kernels/miui
+cp out/arch/arm64/boot/Image anykernel/kernels/
+
 
 echo "Build for MIUI finished."
 # ------------- End of Building for MIUI -------------
@@ -250,7 +249,7 @@ echo "Build for MIUI finished."
 
 cd anykernel 
 
-ZIP_FILENAME=Kernel_${TARGET_DEVICE}_${KSU_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3.zip
+ZIP_FILENAME=Kernel_MIUI_${TARGET_DEVICE}_${KSU_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3.zip
 
 zip -r9 $ZIP_FILENAME ./* -x .git .gitignore out/ ./*.zip
 
