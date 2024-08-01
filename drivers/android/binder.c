@@ -94,7 +94,7 @@
 #include <linux/trace_clock.h>
 #endif
 
-#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+#ifdef CONFIG_MI_SCHED
 extern void mi_binder_restore_vip_hook(struct binder_transaction *in_reply_to, struct task_struct *task);
 extern void mi_binder_set_vip_hook(struct binder_transaction *t, struct task_struct *task);
 #endif
@@ -1312,7 +1312,7 @@ static void binder_transaction_priority(struct task_struct *task,
 
 	binder_set_priority(task, desired_prio);
 
-#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+#ifdef CONFIG_MI_SCHED
 	mi_binder_set_vip_hook(t, task);
 #endif
 
@@ -3675,7 +3675,7 @@ static void binder_transaction(struct binder_proc *proc,
 #ifdef CONFIG_BINDER_OPT
 		binder_thread_restore_inherit_top_app(thread);
 #endif
-#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+#ifdef CONFIG_MI_SCHED
 		mi_binder_restore_vip_hook(in_reply_to, current);
 #endif
 
@@ -3795,7 +3795,7 @@ err_invalid_target_handle:
 
 	BUG_ON(thread->return_error.cmd != BR_OK);
 	if (in_reply_to) {
-#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+#ifdef CONFIG_MI_SCHED
 		mi_binder_restore_vip_hook(in_reply_to, current);
 #endif
 		binder_restore_priority(current, in_reply_to->saved_priority);
@@ -4422,7 +4422,7 @@ retry:
 		}
 #endif
 
-#ifdef CONFIG_PACKAGE_RUNTIME_INFO
+#ifdef CONFIG_MI_SCHED
 		mi_binder_restore_vip_hook(NULL, current);
 #endif
 		binder_restore_priority(current, proc->default_priority);
