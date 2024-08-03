@@ -128,6 +128,9 @@ obj-$(CONFIG_RSEQ) += rseq.o
 $(obj)/configs.o: $(obj)/config_data.h
 
 targets += config_data.gz
+
+ifeq ($(CONFIG_XIAOMI_MIUI),y)
+# Build for MIUI
 ifeq ($(CONFIG_BOARD_ALIOTH),y)
 $(obj)/config_data.gz: arch/arm64/configs/alioth_stock-defconfig FORCE
 else ifeq ($(CONFIG_BOARD_APOLLO),y)
@@ -152,6 +155,30 @@ else ifeq ($(CONFIG_BOARD_UMI),y)
 $(obj)/config_data.gz: arch/arm64/configs/umi_stock-defconfig FORCE
 else
 $(obj)/config_data.gz: $(KCONFIG_CONFIG) FORCE
+endif
+else
+
+# Build for AOSP
+
+ifeq ($(CONFIG_BOARD_ALIOTH),y)
+$(obj)/config_data.gz: arch/arm64/configs/AOSP_defconfig/alioth_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_APOLLO),y)
+$(obj)/config_data.gz: arch/arm64/configs/AOSP_defconfig/apollo_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_CMI),y)
+$(obj)/config_data.gz: arch/arm64/configs/AOSP_defconfig/cmi_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_LMI),y)
+$(obj)/config_data.gz: arch/arm64/configs/AOSP_defconfig/lmi_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_MUNCH),y)
+$(obj)/config_data.gz: arch/arm64/configs/AOSP_defconfig/munch_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_PSYCHE),y)
+$(obj)/config_data.gz: arch/arm64/configs/AOSP_defconfig/psyche_stock-defconfig FORCE
+else ifeq ($(CONFIG_BOARD_UMI),y)
+$(obj)/config_data.gz: arch/arm64/configs/AOSP_defconfig/umi_stock-defconfig FORCE
+else
+$(obj)/config_data.gz: $(KCONFIG_CONFIG) FORCE
+endif
+
+
 endif
 	$(call if_changed,gzip)
 
