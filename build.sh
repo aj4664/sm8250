@@ -93,12 +93,15 @@ else
     exit 1
 fi
 
+echo "Generating [out/arch/arm64/boot/dtb]......"
+find out/arch/arm64/boot/dts -name '*.dtb' -exec cat {} + >out/arch/arm64/boot/dtb
 
 rm -rf anykernel/kernels/
 
 mkdir -p anykernel/kernels/
 
 cp out/arch/arm64/boot/Image anykernel/kernels/
+cp out/arch/arm64/boot/dtb anykernel/kernels/
 
 cd anykernel 
 
@@ -232,6 +235,10 @@ else
     exit 1
 fi
 
+echo "Generating [out/arch/arm64/boot/dtb]......"
+find out/arch/arm64/boot/dts -name '*.dtb' -exec cat {} + >out/arch/arm64/boot/dtb
+
+
 # Restore modified dts
 rm -rf ${dts_source}
 mv .dts.bak ${dts_source}
@@ -240,7 +247,7 @@ rm -rf anykernel/kernels/
 mkdir -p anykernel/kernels/
 
 cp out/arch/arm64/boot/Image anykernel/kernels/
-
+cp out/arch/arm64/boot/dtb anykernel/kernels/
 
 echo "Build for MIUI finished."
 # ------------- End of Building for MIUI -------------
