@@ -83,6 +83,13 @@ else
     scripts/config --file out/.config -d KSU
 fi
 
+# Offcial WLAN
+scripts/config --file ${OUT_DIR}/.config	\
+    -e	DYNAMIC_DEBUG		 	\
+    -d	QCA_CLD_WLAN			\
+    -d	CNSS_QCA6490			\
+    -d	CNSS_QCA6390
+
 make $MAKE_ARGS -j$(nproc)
 
 
@@ -193,6 +200,12 @@ else
     scripts/config --file out/.config -d KSU
 fi
 
+# Offcial WLAN
+scripts/config --file ${OUT_DIR}/.config	\
+    -e	DYNAMIC_DEBUG		 	\
+    -d	QCA_CLD_WLAN			\
+    -d	CNSS_QCA6490			\
+    -d	CNSS_QCA6390
 
 scripts/config --file out/.config \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
