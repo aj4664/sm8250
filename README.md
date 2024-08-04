@@ -25,6 +25,8 @@ And, `dtb` is not flashed by default. (`dtb` is already in the zip). If you enco
 
 并且默认不刷`dtb`（`dtb`已在zip中），如果你遇到奇怪的问题，可以尝试开启刷入dtb。把`anykernel.sh`中的`# mv $home/kernels/dtb $home/dtb;`取消注释即可。
 
+度盘备用下载链接：https://pan.baidu.com/share/init?surl=11ocz7ggZ79gzRfWvsdbJA&pwd=ty58 （建议优先从Github Release下载）
+
 # How to build
 1. Prepair the basic build environment. 
     You have to have the basic common toolchains, such as `git`, `make`, `curl`, `bison`, `flex`, `zip`, etc, and some other packages.
