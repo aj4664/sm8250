@@ -443,8 +443,7 @@ static void cnss_pci_select_window(struct cnss_pci_data *pci_priv, u32 offset)
 	if (val != window_enable) {
 		cnss_pr_err("Failed to config window register to 0x%x, current value: 0x%x\n",
 			    window_enable, val);
-		if (!cnss_pci_check_link_status(pci_priv))
-			CNSS_ASSERT(0);
+		CNSS_ASSERT(0);
 	}
 }
 
@@ -665,25 +664,23 @@ static int cnss_pci_get_link_status(struct cnss_pci_data *pci_priv)
 static int cnss_set_pci_link_status(struct cnss_pci_data *pci_priv,
 				    enum pci_link_status status)
 {
-	u16 link_speed, link_width = pci_priv->def_link_width;
-	u16 one_lane = PCI_EXP_LNKSTA_NLW_X1 >> PCI_EXP_LNKSTA_NLW_SHIFT;
+	u16 link_speed, link_width;
 
 	cnss_pr_vdbg("Set PCI link status to: %u\n", status);
 
 	switch (status) {
 	case PCI_GEN1:
 		link_speed = PCI_EXP_LNKSTA_CLS_2_5GB;
-		if (!link_width)
-			link_width = one_lane;
+		link_width = PCI_EXP_LNKSTA_NLW_X1 >> PCI_EXP_LNKSTA_NLW_SHIFT;
 		break;
 	case PCI_GEN2:
 		link_speed = PCI_EXP_LNKSTA_CLS_5_0GB;
-		if (!link_width)
-			link_width = one_lane;
+		link_width = PCI_EXP_LNKSTA_NLW_X1 >> PCI_EXP_LNKSTA_NLW_SHIFT;
 		break;
 	case PCI_DEF:
 		link_speed = pci_priv->def_link_speed;
-		if (!link_speed || !link_width) {
+		link_width = pci_priv->def_link_width;
+		if (!link_speed && !link_width) {
 			cnss_pr_err("PCI link speed or width is not valid\n");
 			return -EINVAL;
 		}
@@ -1274,11 +1271,8 @@ static int cnss_pci_set_mhi_state(struct cnss_pci_data *pci_priv,
 	case CNSS_MHI_RESUME:
 		mutex_lock(&pci_priv->mhi_ctrl->pm_mutex);
 		if (pci_priv->drv_connected_last) {
-			ret = cnss_pci_prevent_l1(&pci_priv->pci_dev->dev);
-			if (ret) {
-				mutex_unlock(&pci_priv->mhi_ctrl->pm_mutex);
-				break;
-			}
+			cnss_pci_prevent_l1(&pci_priv->pci_dev->dev);
+			ret = mhi_pm_fast_resume(pci_priv->mhi_ctrl, true);
 			cnss_pci_allow_l1(&pci_priv->pci_dev->dev);
 		} else {
 			ret = mhi_pm_resume(pci_priv->mhi_ctrl);
@@ -2449,6 +2443,7 @@ int cnss_wlan_register_driver(struct cnss_wlan_driver *driver_ops)
 		cnss_pr_err("Timeout (%ums) waiting for calibration to complete\n",
 			    timeout);
 		if (!test_bit(CNSS_IN_REBOOT, &plat_priv->driver_state)) {
+			cnss_pci_dump_bl_sram_mem(pci_priv);
 			CNSS_ASSERT(0);
 		}
 
@@ -2552,12 +2547,8 @@ int cnss_pci_register_driver_hdlr(struct cnss_pci_data *pci_priv,
 
 int cnss_pci_unregister_driver_hdlr(struct cnss_pci_data *pci_priv)
 {
-	struct cnss_plat_data *plat_priv;
+	struct cnss_plat_data *plat_priv = pci_priv->plat_priv;
 
-	if (!pci_priv)
-		return -EINVAL;
-
-	plat_priv = pci_priv->plat_priv;
 	set_bit(CNSS_DRIVER_UNLOADING, &plat_priv->driver_state);
 	cnss_pci_dev_shutdown(pci_priv);
 	pci_priv->driver_ops = NULL;
@@ -4938,9 +4929,7 @@ static void cnss_pci_unregister_mhi(struct cnss_pci_data *pci_priv)
 	if (mhi_ctrl->cntrl_log_buf)
 		ipc_log_context_destroy(mhi_ctrl->cntrl_log_buf);
 	kfree(mhi_ctrl->irq);
-	mhi_ctrl->irq = NULL;
 	mhi_free_controller(mhi_ctrl);
-	pci_priv->mhi_ctrl = NULL;
 }
 
 static void cnss_pci_config_regs(struct cnss_pci_data *pci_priv)
@@ -5095,7 +5084,6 @@ static void cnss_pci_remove(struct pci_dev *pci_dev)
 	struct cnss_plat_data *plat_priv =
 		cnss_bus_dev_to_plat_priv(&pci_dev->dev);
 
-	cnss_pci_unregister_driver_hdlr(pci_priv);
 	cnss_pci_free_m3_mem(pci_priv);
 	cnss_pci_free_fw_mem(pci_priv);
 	cnss_pci_free_qdss_mem(pci_priv);
