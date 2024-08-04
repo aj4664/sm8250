@@ -84,7 +84,7 @@ else
 fi
 
 # Offcial WLAN
-scripts/config --file ${OUT_DIR}/.config	\
+scripts/config --file out/.config	\
     -e	DYNAMIC_DEBUG		 	\
     -d	QCA_CLD_WLAN			\
     -d	CNSS_QCA6490			\
@@ -201,7 +201,7 @@ else
 fi
 
 # Offcial WLAN
-scripts/config --file ${OUT_DIR}/.config	\
+scripts/config --file out/.config	\
     -e	DYNAMIC_DEBUG		 	\
     -d	QCA_CLD_WLAN			\
     -d	CNSS_QCA6490			\
