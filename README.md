@@ -4,7 +4,7 @@ This repo is forked from https://github.com/UtsavBalar1231/kernel_xiaomi_sm8250.
 
 The main purpose of maintaining and building this kernel is to fix [this battery stuck at 1% problem](https://github.com/liyafe1997/Xiaomi-fix-battery-one-percent), and some small changes and optimizations of defconfig. Also provide KernelSU integrated pre-built image(flashable anykernel3 zip), and a more intuitive and easy-to-use build script and build guide that allow you to try to build by yourself. 
 
-This focked branch and the pre-built kernel image/zip is based on the `android14-stable` branch of the original repo. It should works on both stock MIUI and third-party AOSP based Android 11~14 ROMs. I have tested with `apollo`(Mi 10T / Redmi K30S Ultra) with MIUI12~14/HyperOS & Android11~14, AOSP based ROM (Pixel Experience/Paranoid/LineageOS) & Android13 and 14, also `lmi`(Redmi K30Pro) with MIUI14.0.4 & Android 12.
+This focked branch and the pre-built kernel image/zip is based on the `android14-stable` branch of the original repo. It should works on both stock MIUI and third-party AOSP based Android 11-14 ROMs. I have tested with `apollo`(Mi 10T / Redmi K30S Ultra) with MIUI12-14/HyperOS & Android11-14, AOSP based ROM (Pixel Experience/Paranoid/LineageOS) & Android13 and 14, also `lmi`(Redmi K30Pro) with MIUI14.0.4 & Android 12.
 
 Since I only have these two devices, I didn't have a chance to test other models but it should works theoretically. You are welcomed to give feedback (Issues/Pull Requests)!
 
@@ -17,7 +17,7 @@ And, `dtb` is not flashed by default. (`dtb` is already in the zip). If you enco
 
 维护和编译这个内核的主要目的是想修复[电量卡在1%的问题](https://github.com/liyafe1997/Xiaomi-fix-battery-one-percent)，以及defconfig有一些小的改动和优化，以及提供带KernelSU的预编译好的内核（原作的没提供有KernelSU，而且原作release里的lmi内核在我的K30Pro上无法启动，所以就想着自己编译了）。以及再提供一个更直观和易用的编译脚本和README，方便大家自己折腾和修改，编译自己的内核。
 
-该focked分支以及release里的编译好的内核成品基于原repo的`android14-stable`分支，应当能在原版MIUI和第三方的基于AOSP的各种Android11~14的ROM上使用。我只在`apollo`(Mi 10T / Redmi K30S Ultra)上测过MIUI12~14/HyperOS & Android11~14，AOSP类原生ROM (Pixel Experience/Paranoid/LineageOS) & Android13和14；以及`lmi`(Redmi K30Pro)上测过MIUI14.0.4 & Android12。
+该focked分支以及release里的编译好的内核成品基于原repo的`android14-stable`分支，应当能在原版MIUI和第三方的基于AOSP的各种Android11-14的ROM上使用。我只在`apollo`(Mi 10T / Redmi K30S Ultra)上测过MIUI12-14/HyperOS & Android11-14，AOSP类原生ROM (Pixel Experience/Paranoid/LineageOS) & Android13和14；以及`lmi`(Redmi K30Pro)上测过MIUI14.0.4 & Android12。
 
 由于我只有这两个设备，所以我只能用这俩手机测，其它型号我没机会测，但理论上应该能用。欢迎大家尝试并反馈（提Issue或Pull Requests）！
 
