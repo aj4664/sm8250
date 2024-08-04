@@ -27,9 +27,6 @@
 
 #define ELF_BDF_FILE_NAME_J1S		"bd_j1s.elf"
 
-#define ELF_BDF_FILE_NAME_L3A		"bd_l3a.elf"
-#define ELF_BDF_FILE_NAME_L3A_GLOBAL	"bd_l3agl.elf"
-
 #define ELF_BDF_FILE_NAME_J2S		"bd_j2s.elf"
 
 #define ELF_BDF_FILE_NAME_J3S		"bd_j3s.elf"
@@ -46,12 +43,6 @@
 #define ELF_BDF_FILE_NAME_L11R		"bd_l11r.elf"
 #define ELF_BDF_FILE_NAME_L11R_GLOBAL	"bd_l11rgl.elf"
 #define ELF_BDF_FILE_NAME_L11R_INDIA	"bd_l11rin.elf"
-
-#define ELF_BDF_FILE_NAME_L81A          "bd_l81a.elf"
-
-#define ELF_BDF_FILE_NAME_M82            "bd_m82.elf"
-#define ELF_BDF_FILE_NAME_M82_GLOBAL     "bd_m82gl.elf"
-#define ELF_BDF_FILE_NAME_M82_INDIA      "bd_m82in.elf"
 
 #define ELF_BDF_FILE_NAME_GF		"bdwlang.elf"
 
@@ -291,15 +282,6 @@ static int cnss_wlfw_host_cap_send_sync(struct cnss_plat_data *plat_priv)
 	req->cal_done_valid = 1;
 	req->cal_done = plat_priv->cal_done;
 	cnss_pr_dbg("Calibration done is %d\n", plat_priv->cal_done);
-
-	if (plat_priv->cal_duration != CNSS_INVALID_CAL_DURATION) {
-		req->cal_duration_valid = 1;
-		req->cal_duration = plat_priv->cal_duration;
-		cnss_pr_dbg("Calibration duration: %u",
-			    plat_priv->cal_duration);
-	} else {
-		cnss_pr_dbg("Calibration duration not valid");
-	}
 
 	if (!cnss_bus_get_iova(plat_priv, &iova_start, &iova_size) &&
 	    !cnss_bus_get_iova_ipa(plat_priv, &iova_ipa_start,
@@ -649,20 +631,6 @@ static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
 				case HARDWARE_PLATFORM_ELISH:
 					snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K81A);
 					break;
-				case HARDWARE_PLATFORM_PIPA:
-					if (hw_country_ver == (uint32_t)CountryGlobal)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_M82_GLOBAL);
-					else if (hw_country_ver == (uint32_t)CountryIndia)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_M82_INDIA);
-					else
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_M82);
-					break;
-				case HARDWARE_PLATFORM_PSYCHE:
-					if (hw_country_ver == (uint32_t)CountryGlobal)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L3A_GLOBAL);
-					else
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L3A);
-					break;
 				case HARDWARE_PLATFORM_MUNCH:
 					if (hw_country_ver == (uint32_t)CountryGlobal)
 						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R_GLOBAL);
@@ -670,9 +638,6 @@ static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
 						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R_INDIA);
 					else
 						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R);
-					break;
-				case HARDWARE_PLATFORM_DAGU:
-					snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L81A);
 					break;
 				default:
 					snprintf(filename_tmp, filename_len,  ELF_BDF_FILE_NAME);
