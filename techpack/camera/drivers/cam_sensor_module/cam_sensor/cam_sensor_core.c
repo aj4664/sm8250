@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -12,6 +11,7 @@
 #include "cam_trace.h"
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
+
 
 static void cam_sensor_update_req_mgr(
 	struct cam_sensor_ctrl_t *s_ctrl,
@@ -300,7 +300,6 @@ static int32_t cam_sensor_i2c_pkt_parse(struct cam_sensor_ctrl_t *s_ctrl,
 	}
 
 end:
-	cam_mem_put_cpu_buf(config.packet_handle);
 	return rc;
 }
 
@@ -385,8 +384,7 @@ static int32_t cam_sensor_update_i2c_info(struct cam_cmd_i2c_info *i2c_info,
 
 static int32_t cam_sensor_i2c_modes_util(
 	struct cam_sensor_ctrl_t *s_ctrl,
-	struct i2c_settings_list *i2c_list,
-	bool force_low_priority)
+	struct i2c_settings_list *i2c_list)
 {
 	int32_t rc = 0;
 	uint32_t i, size;
@@ -401,16 +399,14 @@ static int32_t cam_sensor_i2c_modes_util(
 
 	if (i2c_list->op_code == CAM_SENSOR_I2C_WRITE_RANDOM) {
 		rc = camera_io_dev_write(io_master_info,
-			&(i2c_list->i2c_settings),
-			force_low_priority);
+			&(i2c_list->i2c_settings));
 		if ((rc == -ETIMEDOUT) &&
 			(io_master_info->master_type == CCI_MASTER)) {
 			CAM_WARN(CAM_SENSOR,
 				"CCI HW is restting: Reapplying request settings");
 			usleep_range(2000, 2010);
 			rc = camera_io_dev_write(io_master_info,
-				&(i2c_list->i2c_settings),
-				force_low_priority);
+				&(i2c_list->i2c_settings));
 		}
 		if (rc < 0) {
 			CAM_ERR(CAM_SENSOR,
@@ -422,7 +418,7 @@ static int32_t cam_sensor_i2c_modes_util(
 		rc = camera_io_dev_write_continuous(
 			io_master_info,
 			&(i2c_list->i2c_settings),
-			0, force_low_priority);
+			0);
 		if (rc < 0) {
 			CAM_ERR(CAM_SENSOR,
 				"Failed to seq write I2C settings: %d",
@@ -433,7 +429,7 @@ static int32_t cam_sensor_i2c_modes_util(
 		rc = camera_io_dev_write_continuous(
 			io_master_info,
 			&(i2c_list->i2c_settings),
-			1, force_low_priority);
+			1);
 		if (rc < 0) {
 			CAM_ERR(CAM_SENSOR,
 				"Failed to burst write I2C settings: %d",
@@ -646,7 +642,6 @@ int32_t cam_handle_mem_ptr(uint64_t handle, struct cam_sensor_ctrl_t *s_ctrl)
 		if (cmd_desc[i].offset >= len) {
 			CAM_ERR(CAM_SENSOR,
 				"offset past length of buffer");
-			cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
 			rc = -EINVAL;
 			goto end;
 		}
@@ -654,7 +649,6 @@ int32_t cam_handle_mem_ptr(uint64_t handle, struct cam_sensor_ctrl_t *s_ctrl)
 		if (cmd_desc[i].length > remain_len) {
 			CAM_ERR(CAM_SENSOR,
 				"Not enough buffer provided for cmd");
-			cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
 			rc = -EINVAL;
 			goto end;
 		}
@@ -667,14 +661,11 @@ int32_t cam_handle_mem_ptr(uint64_t handle, struct cam_sensor_ctrl_t *s_ctrl)
 		if (rc < 0) {
 			CAM_ERR(CAM_SENSOR,
 				"Failed to parse the command Buffer Header");
-			cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
 			goto end;
 		}
-		cam_mem_put_cpu_buf(cmd_desc[i].mem_handle);
 	}
 
 end:
-	cam_mem_put_cpu_buf(handle);
 	return rc;
 }
 
@@ -975,8 +966,10 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 	}
 		break;
 	case CAM_RELEASE_DEV: {
+
 		/*STOP DEV when sensor is START DEV and RELEASE called*/
-		if (s_ctrl->sensor_state == CAM_SENSOR_START) {
+		if (s_ctrl->sensor_state == CAM_SENSOR_START)
+		{
 			CAM_WARN(CAM_SENSOR,
 			"Unbalance Release called with out STOP: %d",
 						s_ctrl->sensor_state);
@@ -1206,7 +1199,6 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 		struct cam_sensor_i2c_reg_setting user_reg_setting;
 		struct cam_sensor_i2c_reg_array *i2c_reg_setting = NULL;
 		int i = 0;
-		bool force_low_priority = false;
 
 		rc = copy_from_user(&user_reg_setting, (void __user *)(cmd->handle), sizeof(user_reg_setting));
 		if (rc < 0) {
@@ -1237,10 +1229,7 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 				i2c_reg_setting[i].reg_addr, i2c_reg_setting[i].reg_data);
 		}
 
-		force_low_priority =
-			s_ctrl->force_low_priority_for_init_setting;
-		rc = camera_io_dev_write(&s_ctrl->io_master_info,
-					 &user_reg_setting, force_low_priority);
+		rc = camera_io_dev_write(&s_ctrl->io_master_info, &user_reg_setting);
 		if (rc < 0)
 			CAM_ERR(CAM_SENSOR, "Write setting failed, rc = %d\n", rc);
 
@@ -1479,7 +1468,6 @@ int cam_sensor_apply_settings(struct cam_sensor_ctrl_t *s_ctrl,
 	uint64_t top = 0, del_req_id = 0;
 	struct i2c_settings_array *i2c_set = NULL;
 	struct i2c_settings_list *i2c_list;
-	bool force_low_priority = false;
 
 	if (req_id == 0) {
 		switch (opcode) {
@@ -1489,8 +1477,6 @@ int cam_sensor_apply_settings(struct cam_sensor_ctrl_t *s_ctrl,
 		}
 		case CAM_SENSOR_PACKET_OPCODE_SENSOR_INITIAL_CONFIG: {
 			i2c_set = &s_ctrl->i2c_data.init_settings;
-			force_low_priority =
-				s_ctrl->force_low_priority_for_init_setting;
 			break;
 		}
 		case CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG: {
@@ -1522,7 +1508,7 @@ int cam_sensor_apply_settings(struct cam_sensor_ctrl_t *s_ctrl,
 			list_for_each_entry(i2c_list,
 				&(i2c_set->list_head), list) {
 				rc = cam_sensor_i2c_modes_util(s_ctrl,
-					i2c_list, force_low_priority);
+					i2c_list);
 				if (rc < 0) {
 					CAM_ERR(CAM_SENSOR,
 						"Failed to apply settings: %d",
@@ -1539,7 +1525,7 @@ int cam_sensor_apply_settings(struct cam_sensor_ctrl_t *s_ctrl,
 			list_for_each_entry(i2c_list,
 				&(i2c_set->list_head), list) {
 				rc = cam_sensor_i2c_modes_util(s_ctrl,
-					i2c_list, force_low_priority);
+					i2c_list);
 				if (rc < 0) {
 					CAM_ERR(CAM_SENSOR,
 						"Failed to apply settings: %d",

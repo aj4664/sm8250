@@ -694,7 +694,6 @@ static int cam_ife_csid_global_reset(struct cam_ife_csid_hw *csid_hw)
 		cam_io_w_mb(0x2, soc_info->reg_map[0].mem_base +
 			csid_reg->rdi_reg[i]->csid_rdi_cfg0_addr);
 
-#ifdef CONFIG_BOARD_PSYCHE
 	/* reset SW regs first, then HW */
 	rc = cam_ife_csid_reset_regs(csid_hw, false);
 	if (rc < 0)
@@ -702,15 +701,6 @@ static int cam_ife_csid_global_reset(struct cam_ife_csid_hw *csid_hw)
 	rc = cam_ife_csid_reset_regs(csid_hw, true);
 	if (rc < 0)
 		goto end;
-#else
-	/* reset HW regs first, then SW */
-	rc = cam_ife_csid_reset_regs(csid_hw, true);
-	if (rc < 0)
-		goto end;
-	rc = cam_ife_csid_reset_regs(csid_hw, false);
-	if (rc < 0)
-		goto end;
-#endif
 
 	val = cam_io_r_mb(soc_info->reg_map[0].mem_base +
 		csid_reg->csi2_reg->csid_csi2_rx_irq_mask_addr);
@@ -1018,12 +1008,6 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 	if (csid_hw->csi2_reserve_cnt) {
 		/* current configure res type should match requested res type */
 		if (csid_hw->res_type != cid_reserv->in_port->res_type) {
-#ifdef CONFIG_CAMERA_CAS
-			CAM_ERR(CAM_ISP, "[wrong res_type], CSID:%d, csid_hw->res_type:%d, cid_reserv->res_type:%d",
-                    csid_hw->hw_intf->hw_idx,
-                    csid_hw->res_type,
-                    cid_reserv->in_port->res_type);
-#endif
 			rc = -EINVAL;
 			goto end;
 		}
@@ -1052,15 +1036,6 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 			cid_reserv->in_port->test_pattern)) {
 
 			rc = -EINVAL;
-
-#ifdef CONFIG_CAMERA_CAS
-			CAM_ERR(CAM_ISP,
-				"[wrong lane configuration]: CSID:%d res_sel:0x%x Lane type:%d lane_num:%d",
-				csid_hw->hw_intf->hw_idx,
-				csid_hw->csi2_rx_cfg.lane_cfg,
-				csid_hw->csi2_rx_cfg.lane_type,
-				csid_hw->csi2_rx_cfg.lane_num);
-#endif
 			goto end;
 		}
 	}
