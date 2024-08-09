@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2020 XiaoMi, Inc.
  */
 
 #include <linux/module.h>
 #include <linux/firmware.h>
-#include <linux/dma-contiguous.h>
 #include <cam_sensor_cmn_header.h>
 #include "cam_ois_core.h"
 #include "cam_ois_soc.h"
@@ -15,6 +15,7 @@
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
 #include "Lc898128.h"
+#include <linux/vmalloc.h>
 
 const uint8_t PACT1Tbl[] = { 0x20, 0xDF };	/* [ACT_02][ACT_01][ACT_03] */
 
@@ -38,7 +39,7 @@ void RamWrite32A(struct cam_ois_ctrl_t *o_ctrl, uint32_t addr, uint32_t data, ui
 	i2c_reg_settings.reg_setting = &i2c_reg_array;
 
 	rc = camera_io_dev_write(&o_ctrl->io_master_info,
-		&i2c_reg_settings, false);
+		&i2c_reg_settings);
 	if (rc) {
 		CAM_ERR(CAM_OIS, "%s : write addr 0x%04x data 0x%x failed rc %d",
 			o_ctrl->ois_name, addr, data, rc);
@@ -129,7 +130,7 @@ void CntWrt(struct cam_ois_ctrl_t *o_ctrl, uint8_t *data, uint32_t length, uint3
 	write_setting.reg_setting = w_data;
 
 	rc = camera_io_dev_write_continuous(&(o_ctrl->io_master_info),
-		&write_setting, 1, false);
+		&write_setting, 1);
 	if (rc < 0) {
 		CAM_ERR(CAM_OIS, "OIS CntWrt write failed %d", rc);
 	}
@@ -1253,7 +1254,7 @@ uint8_t download_fw(
 	const char                        *fw_name = NULL;
 	struct device                     *dev = &(o_ctrl->pdev->dev);
 	struct cam_sensor_i2c_reg_setting  i2c_reg_setting;
-	struct page                       *page = NULL;
+	void                              *vaddr = NULL;
 
 	fw_addr = addr;
 	fw_name = firmware_name;
@@ -1268,18 +1269,18 @@ uint8_t download_fw(
 		i2c_reg_setting.data_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
 		i2c_reg_setting.size = total_bytes;
 		i2c_reg_setting.delay = 0;
-		fw_size = PAGE_ALIGN(sizeof(struct cam_sensor_i2c_reg_array) *
-			total_bytes) >> PAGE_SHIFT;
-		page = cma_alloc(dev_get_cma_area((o_ctrl->soc_info.dev)),
-			fw_size, 0, GFP_KERNEL);
-		if (!page) {
-			CAM_ERR(CAM_OIS, "Failed in allocating i2c_array");
+		fw_size = sizeof(struct cam_sensor_i2c_reg_array) * total_bytes;
+		vaddr = vmalloc(fw_size);
+
+		if (!vaddr) {
+		    CAM_ERR(CAM_OIS,
+		    "Failed in allocating i2c_array: fw_size: %u", fw_size);
 			release_firmware(fw);
 			return -ENOMEM;
 		}
 
-		i2c_reg_setting.reg_setting = (struct cam_sensor_i2c_reg_array *) (
-			page_address(page));
+		i2c_reg_setting.reg_setting = (struct cam_sensor_i2c_reg_array *) vaddr;
+
 		ptr = (uint8_t *)fw->data;
 		if (read_data) {
 			for (i = 0; i < read_length; i++) {
@@ -1298,7 +1299,7 @@ uint8_t download_fw(
 			i2c_reg_setting.size = cnt;
 
 			rc = camera_io_dev_write_continuous(&(o_ctrl->io_master_info),
-				&i2c_reg_setting, 1, false);
+				&i2c_reg_setting, 1);
 			if (rc < 0) {
 				CAM_ERR(CAM_OIS, "OIS FW %s download failed %d", fw_name, rc);
 				break;
@@ -1312,9 +1313,9 @@ uint8_t download_fw(
 				}
 			}
 		}
-		cma_release(dev_get_cma_area((o_ctrl->soc_info.dev)),
-			page, fw_size);
-		page = NULL;
+
+		vfree(vaddr);
+		vaddr = NULL;
 		fw_size = 0;
 		release_firmware(fw);
 	}
