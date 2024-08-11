@@ -6,6 +6,7 @@ export CCACHE_DIR="$HOME/.cache/ccache_mikernel"
 export CC="ccache gcc"
 export CXX="ccache g++"
 export PATH="/usr/lib/ccache:$PATH"
+ccache -M 50G
 
 bash build.sh psyche
 bash build.sh thyme
