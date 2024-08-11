@@ -29,6 +29,7 @@ And, `dtb` is not flashed by default. (`dtb` is already in the zip). If you enco
 
 # How to build
 1. Prepair the basic build environment. 
+
     You have to have the basic common toolchains, such as `git`, `make`, `curl`, `bison`, `flex`, `zip`, etc, and some other packages.
     In Debian/Ubuntu, you can
     ```
@@ -45,6 +46,7 @@ And, `dtb` is not flashed by default. (`dtb` is already in the zip). If you enco
     Notice: `ccache` is enabled in `build.sh` for speed up the compiling. `CCACHE_DIR` has been set as `$HOME/.cache/ccache_mikernel` in `build.sh`. If you don't like you can remove or modify it.
 
 2. Download [proton-clang] compiler toolchain
+
     You have to have `aarch64-linux-gnu`, `arm-linux-gnueabi`, `clang`. [Proton Clang](https://github.com/kdrag0n/proton-clang/) is a good prebuilt clang cross compiler toolchain.
 
     The default toolchain path is `$HOME/proton-clang/proton-clang-20210522/bin` which is set in `build.sh`. If you are using another location please change `TOOLCHAIN_PATH` in `build.sh`.
