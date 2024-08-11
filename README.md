@@ -32,7 +32,7 @@ And, `dtb` is not flashed by default. (`dtb` is already in the zip). If you enco
     You have to have the basic common toolchains, such as `git`, `make`, `curl`, `bison`, `flex`, `zip`, etc, and some other packages.
     In Debian/Ubuntu, you can
     ```
-    sudo apt install build-essential git curl wget bison flex zip bc cpio libssl-dev
+    sudo apt install build-essential git curl wget bison flex zip bc cpio libssl-dev ccache
     ```
     And also, you have to have `python` (only `python3` is not enough). you can install the apt package `python-is-python3`.
 
@@ -42,43 +42,22 @@ And, `dtb` is not flashed by default. (`dtb` is already in the zip). If you enco
     sudo yum install wget bc openssl-devel
     ```
 
-2. Download compiler from Google
-    You have to have `aarch64-linux-android`, `arm-linux-androideabi`, `clang`. They are avaliable in these repository:
-    https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
-    https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9
-    https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86
+    Notice: `ccache` is enabled in `build.sh` for speed up the compiling. `CCACHE_DIR` has been set as `$HOME/.cache/ccache_mikernel` in `build.sh`. If you don't like you can remove or modify it.
 
-    The branch `android12-gsi` is recommanded, even we are building so called `Android 14 kernel` :) . Because it is just a compiler(clang), it doesn't really tied to any specific Android/Kernel version, so use similar versions should be OK. I don't know the real meaning of "android12-gsi" branch in these compiler's repo is, I guess Google uses that or recommand that for compiling the Android 12 GSI's kernel :) So we can just use that, and I tested that it has no problem. 
+2. Download [proton-clang] compiler toolchain
+    You have to have `aarch64-linux-gnu`, `arm-linux-gnueabi`, `clang`. [Proton Clang](https://github.com/kdrag0n/proton-clang/) is a good prebuilt clang cross compiler toolchain.
 
-    It is recommand to direcly download the tar ball instead of `git clone` these repository, because it is super large and takes a long time. So you can just follow these commands to get the compilers binary.
+    The default toolchain path is `$HOME/proton-clang/proton-clang-20210522/bin` which is set in `build.sh`. If you are using another location please change `TOOLCHAIN_PATH` in `build.sh`.
 
     ```
-    mkdir aarch64-linux-android-4.9
-    cd aarch64-linux-android-4.9
-    wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/heads/android12-gsi.tar.gz
-    tar xvf android12-gsi.tar.gz
-    cd ..
-
-    mkdir arm-linux-androideabi-4.9
-    cd arm-linux-androideabi-4.9
-    wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/heads/android12-gsi.tar.gz
-    tar xvf android12-gsi.tar.gz
-    cd ..
-
-    mkdir clang-android
-    cd clang-android
-    wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android12-gsi.tar.gz
-    tar xvf android12-gsi.tar.gz
+    mkdir proton-clang
+    cd proton-clang
+    wget https://github.com/kdrag0n/proton-clang/archive/refs/tags/20210522.zip
+    unzip 20210522.zip
     cd ..
     ```
 
-3. Set the environment.
-    If you followed the above command and downloaded to your home directory, you can directly use this command to put them to the `PATH`, otherwise change to the correct location.
-    ```
-    export PATH="$HOME/arm-linux-androideabi-4.9/bin:$HOME/aarch64-linux-android-4.9/bin:$HOME/clang-android/clang-r416183b1/bin:$PATH"
-    ```
-
-4. Build
+3. Build
 
     Build without KernelSU: 
     ```
