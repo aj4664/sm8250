@@ -40,7 +40,7 @@ And, `dtb` is not flashed by default. (`dtb` is already in the zip). If you enco
     In RHEL/RPM based OS, you can
     ```
     sudo yum groupinstall 'Development Tools'
-    sudo yum install wget bc openssl-devel
+    sudo yum install wget bc openssl-devel ccache
     ```
 
     Notice: `ccache` is enabled in `build.sh` for speed up the compiling. `CCACHE_DIR` has been set as `$HOME/.cache/ccache_mikernel` in `build.sh`. If you don't like you can remove or modify it.
