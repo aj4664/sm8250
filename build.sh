@@ -248,6 +248,7 @@ scripts/config --file out/.config \
     -e MIUI_ZRAM_MEMORY_TRACKING \
     -d CONFIG_MODULE_SIG_SHA512 \
     -d CONFIG_MODULE_SIG_HASH \
+    -e MI_SCHED \
     -e MI_FRAGMENTION \
 
 make $MAKE_ARGS -j$(nproc)
