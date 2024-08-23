@@ -226,10 +226,10 @@ scripts/config --file out/.config \
     -e SF_BINDER		\
     -e OVERLAY_FS		\
     -d DEBUG_FS \
-    -d MIGT \
-    -d MIGT_ENERGY_MODEL \
+    -e MIGT \
+    -e MIGT_ENERGY_MODEL \
     -e MIHW \
-    -d PACKAGE_RUNTIME_INFO \
+    -e PACKAGE_RUNTIME_INFO \
     -e BINDER_OPT \
     -e KPERFEVENTS \
     -e MILLET \
