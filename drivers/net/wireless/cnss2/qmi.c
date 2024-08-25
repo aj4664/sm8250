@@ -17,40 +17,41 @@
 #define ELF_BDF_FILE_NAME		"bdwlan.elf"
 
 #define ELF_BDF_FILE_NAME_J11		"bd_j11.elf"
-#define ELF_BDF_FILE_NAME_J11_B_BOM	"bd_j11_b.elf"
-#define ELF_BDF_FILE_NAME_J11_INDIA	"bd_j11in.elf"
-#define ELF_BDF_FILE_NAME_J11_GLOBAL	"bd_j11gl.elf"
+#define ELF_BDF_FILE_NAME_J11_B_BOM		"bd_j11_b.elf"
+#define ELF_BDF_FILE_NAME_J11_INDIA		"bd_j11in.elf"
+#define ELF_BDF_FILE_NAME_J11_GLOBAL		"bd_j11gl.elf"
 
-#define ELF_BDF_FILE_NAME_J1_GLOBAL	"bd_j1gl.elf"
-#define ELF_BDF_FILE_NAME_J1_INDIA	"bd_j1in.elf"
-#define ELF_BDF_FILE_NAME_J1_B_BOM	"bd_j1_b.elf"
+#define ELF_BDF_FILE_NAME_GLOBAL	 "bd_j1gl.elf"
+#define ELF_BDF_FILE_NAME_INDIA		 "bd_j1in.elf"
+#define ELF_BDF_FILE_NAME_B_BOM		 "bd_j1_b.elf"
 
-#define ELF_BDF_FILE_NAME_J1S		"bd_j1s.elf"
+#define ELF_BDF_FILE_NAME_L3A		 "bd_l3a.elf"
+#define ELF_BDF_FILE_NAME_L3A_GLOBAL		 "bd_l3agl.elf"
 
-#define ELF_BDF_FILE_NAME_L3A		"bd_l3a.elf"
-#define ELF_BDF_FILE_NAME_L3A_GLOBAL	"bd_l3agl.elf"
+#define ELF_BDF_FILE_NAME_L10A		 "bd_l10a.elf"
+#define ELF_BDF_FILE_NAME_L10A_GLOBAL	 "bd_l10agl.elf"
 
-#define ELF_BDF_FILE_NAME_J2S		"bd_j2s.elf"
+#define ELF_BDF_FILE_NAME_L11R           "bd_l11r.elf"
+#define ELF_BDF_FILE_NAME_L11R_GLOBAL    "bd_l11rgl.elf"
 
-#define ELF_BDF_FILE_NAME_J3S		"bd_j3s.elf"
-#define ELF_BDF_FILE_NAME_J3S_GLOBAL	"bd_j3sgl.elf"
-#define ELF_BDF_FILE_NAME_J3S_INDIA	"bd_j3sin.elf"
+#define ELF_BDF_FILE_NAME_J1S		 "bd_j1s.elf"
 
-#define ELF_BDF_FILE_NAME_K11A		"bd_k11a.elf"
-#define ELF_BDF_FILE_NAME_K11A_GLOBAL	"bd_k11agl.elf"
-#define ELF_BDF_FILE_NAME_K11A_INDIA	"bd_k11ain.elf"
+#define ELF_BDF_FILE_NAME_J2S		 "bd_j2s.elf"
 
-#define ELF_BDF_FILE_NAME_K81           "bd_k81.elf"
-#define ELF_BDF_FILE_NAME_K81A          "bd_k81a.elf"
+#define ELF_BDF_FILE_NAME_J3S		 "bd_j3s.elf"
+#define ELF_BDF_FILE_NAME_J3S_GLOBAL	 "bd_j3sgl.elf"
+#define ELF_BDF_FILE_NAME_J3S_INDIA	 "bd_j3sin.elf"
 
-#define ELF_BDF_FILE_NAME_L11R		"bd_l11r.elf"
-#define ELF_BDF_FILE_NAME_L11R_GLOBAL	"bd_l11rgl.elf"
-#define ELF_BDF_FILE_NAME_L11R_INDIA	"bd_l11rin.elf"
+#define ELF_BDF_FILE_NAME_K11A		 "bd_k11a.elf"
+#define ELF_BDF_FILE_NAME_K11A_GLOBAL	 "bd_k11agl.elf"
+#define ELF_BDF_FILE_NAME_K11A_INDIA	 "bd_k11ain.elf"
 
-#define ELF_BDF_FILE_NAME_L81A          "bd_l81a.elf"
+#define ELF_BDF_FILE_NAME_K81            "bd_k81.elf"
+#define ELF_BDF_FILE_NAME_K81A           "bd_k81a.elf"
+
+#define ELF_BDF_FILE_NAME_L81A           "bd_l81a.elf"
 
 #define ELF_BDF_FILE_NAME_GF		"bdwlang.elf"
-
 #define ELF_BDF_FILE_NAME_PREFIX	"bdwlan.e"
 #define ELF_BDF_FILE_NAME_GF_PREFIX	"bdwlang.e"
 #define BIN_BDF_FILE_NAME		"bdwlan.bin"
@@ -252,7 +253,7 @@ static int cnss_wlfw_host_cap_send_sync(struct cnss_plat_data *plat_priv)
 		req->wake_msi_valid = 1;
 	}
 
-#if IS_ENABLED(CONFIG_WIFI_THREE_ANTENNA)
+#ifdef CONFIG_WIFI_THREE_ANTENNA
 	req->gpios_valid = 1;
 	/* Format of GPIO configuration -
 	*
@@ -287,6 +288,15 @@ static int cnss_wlfw_host_cap_send_sync(struct cnss_plat_data *plat_priv)
 	req->cal_done_valid = 1;
 	req->cal_done = plat_priv->cal_done;
 	cnss_pr_dbg("Calibration done is %d\n", plat_priv->cal_done);
+
+	if (plat_priv->cal_duration != CNSS_INVALID_CAL_DURATION) {
+		req->cal_duration_valid = 1;
+		req->cal_duration = plat_priv->cal_duration;
+		cnss_pr_dbg("Calibration duration: %u",
+			    plat_priv->cal_duration);
+	} else {
+		cnss_pr_dbg("Calibration duration not valid");
+	}
 
 	if (!cnss_bus_get_iova(plat_priv, &iova_start, &iova_size) &&
 	    !cnss_bus_get_iova_ipa(plat_priv, &iova_ipa_start,
@@ -560,105 +570,150 @@ out:
 	return ret;
 }
 
-static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
-				  u32 bdf_type, char *filename,
-				  u32 filename_len)
+static void cnss_get_xiaomi_bdf_elf_file_name(char *filename_tmp, u32 filename_len)
 {
-	char filename_tmp[MAX_FIRMWARE_NAME_LEN];
-	int ret = 0;
 	int hw_platform_ver = -1;
 	uint32_t hw_country_ver = 0;
 
 	hw_platform_ver = get_hw_version_platform();
 	hw_country_ver = get_hw_country_version();
 
-	cnss_pr_dbg("hw_platform_ver is %d\n", hw_platform_ver);
+	switch (hw_platform_ver) {
+	case HARDWARE_PLATFORM_LMI:
+		switch (hw_country_ver) {
+		case (uint32_t)CountryGlobal:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11_GLOBAL);
+			break;
+		case (uint32_t)CountryIndia:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11_INDIA);
+			break;
+		default:
+			if ((get_hw_version_minor() == (uint32_t)HW_MINOR_VERSION_B) &&
+			    (get_hw_version_major() == (uint32_t)HW_MAJOR_VERSION_B)) {
+				snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11_B_BOM);
+			} else {
+				snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11);
+			}
+			break;
+		}
+		break;
+	case HARDWARE_PLATFORM_CAS:
+		snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J1S);
+		break;
+	case HARDWARE_PLATFORM_THYME:
+		snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J2S);
+		break;
+	case HARDWARE_PLATFORM_APOLLO:
+		switch (hw_country_ver) {
+		case (uint32_t)CountryGlobal:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J3S_GLOBAL);
+			break;
+		case (uint32_t)CountryIndia:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J3S_INDIA);
+			break;
+		default:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J3S);
+			break;
+		}
+		break;
+	case HARDWARE_PLATFORM_ALIOTH:
+		switch (hw_country_ver) {
+		case (uint32_t)CountryGlobal:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K11A_GLOBAL);
+			break;
+		case (uint32_t)CountryIndia:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K11A_INDIA);
+			break;
+		default:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K11A);
+			break;
+		}
+		break;
+	case HARDWARE_PLATFORM_ENUMA:
+		snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K81);
+		break;
+	case HARDWARE_PLATFORM_ELISH:
+		snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K81A);
+		break;
+	case HARDWARE_PLATFORM_PSYCHE:
+		switch (hw_country_ver) {
+		case (uint32_t)CountryGlobal:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L3A_GLOBAL);
+			break;
+		default:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L3A);
+			break;
+		}
+		break;
+	case HARDWARE_PLATFORM_MUNCH:
+		switch (hw_country_ver) {
+		case (uint32_t)CountryGlobal:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R_GLOBAL);
+			break;
+		default:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R);
+			break;
+		}
+		break;
+	case HARDWARE_PLATFORM_DAGU:
+		snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L81A);
+		break;
+	default:
+		switch (hw_country_ver) {
+		case (uint32_t)CountryGlobal:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_GLOBAL);
+			break;
+		case (uint32_t)CountryIndia:
+			snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_INDIA);
+			break;
+		default:
+			if ((get_hw_version_minor() == (uint32_t)HW_MINOR_VERSION_B) &&
+			    (get_hw_version_major() == (uint32_t)HW_MAJOR_VERSION_B)) {
+				snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_B_BOM);
+			} else {
+				snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME);
+			}
+			break;
+		}
+		break;
+	}
+
+	return;
+}
+
+static void cnss_get_xiaomi_bdf_regdb_file_name(char *filename_tmp, u32 filename_len)
+{
+	int hw_platform_ver = -1;
+	uint32_t hw_country_ver = 0;
+
+	hw_platform_ver = get_hw_version_platform();
+	hw_country_ver = get_hw_country_version();
+
+	switch (hw_platform_ver) {
+	case HARDWARE_PLATFORM_LMI:
+		snprintf(filename_tmp, filename_len, REGDB_FILE_NAME_J11);
+		break;
+	default:
+		snprintf(filename_tmp, filename_len, REGDB_FILE_NAME);
+		break;
+	}
+
+	return;
+}
+
+static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
+				  u32 bdf_type, char *filename,
+				  u32 filename_len)
+{
+	char filename_tmp[MAX_FIRMWARE_NAME_LEN];
+	int ret = 0;
+
 	switch (bdf_type) {
 	case CNSS_BDF_ELF:
 		/* Board ID will be equal or less than 0xFF in GF mask case */
 		if (plat_priv->board_info.board_id == 0xFF) {
-			if (plat_priv->chip_info.chip_id & CHIP_ID_GF_MASK) {
-				snprintf(filename_tmp, filename_len,
-					 ELF_BDF_FILE_NAME_GF);
-			} else {
-				switch (hw_platform_ver) {
-				case HARDWARE_PLATFORM_LMI:
-					if (hw_country_ver == (uint32_t)CountryGlobal) {
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11_GLOBAL);
-					} else if (hw_country_ver == (uint32_t)CountryIndia) {
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11_INDIA);
-					} else {
-						if ((get_hw_version_minor() == (uint32_t)HW_MINOR_VERSION_B) &&
-						    (get_hw_version_major() == (uint32_t)HW_MAJOR_VERSION_B))
-							snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11_B_BOM);
-						else
-							snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J11);
-					}
-					break;
-				case HARDWARE_PLATFORM_CAS:
-					snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J1S);
-					break;
-				case HARDWARE_PLATFORM_THYME:
-					snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J2S);
-					break;
-				case HARDWARE_PLATFORM_APOLLO:
-					if (hw_country_ver == (uint32_t)CountryGlobal)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J3S_GLOBAL);
-					else if (hw_country_ver == (uint32_t)CountryIndia)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J3S_INDIA);
-					else
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J3S);
-					break;
-				case HARDWARE_PLATFORM_ALIOTH:
-					if (hw_country_ver == (uint32_t)CountryGlobal)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K11A_GLOBAL);
-					else if (hw_country_ver == (uint32_t)CountryIndia)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K11A_INDIA);
-					else
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K11A);
-					break;
-				case HARDWARE_PLATFORM_CMI:
-					if (hw_country_ver == (uint32_t)CountryGlobal) {
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J1_GLOBAL);
-					} else if (hw_country_ver == (uint32_t)CountryIndia) {
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J1_INDIA);
-					} else {
-						if ((get_hw_version_minor() == (uint32_t)HW_MINOR_VERSION_B) &&
-						    (get_hw_version_major() == (uint32_t)HW_MAJOR_VERSION_B))
-							snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_J1_B_BOM);
-						else
-							snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME);
-					}
-					break;
-				case HARDWARE_PLATFORM_ENUMA:
-					snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K81);
-					break;
-				case HARDWARE_PLATFORM_ELISH:
-					snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_K81A);
-					break;
-				case HARDWARE_PLATFORM_PSYCHE:
-					if (hw_country_ver == (uint32_t)CountryGlobal)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L3A_GLOBAL);
-					else
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L3A);
-					break;
-				case HARDWARE_PLATFORM_MUNCH:
-					if (hw_country_ver == (uint32_t)CountryGlobal)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R_GLOBAL);
-					else if (hw_country_ver == (uint32_t)CountryIndia)
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R_INDIA);
-					else
-						snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L11R);
-					break;
-				case HARDWARE_PLATFORM_DAGU:
-					snprintf(filename_tmp, filename_len, ELF_BDF_FILE_NAME_L81A);
-					break;
-				default:
-					snprintf(filename_tmp, filename_len,  ELF_BDF_FILE_NAME);
-					break;
-				}
-			}
-		}  else if (plat_priv->board_info.board_id < 0xFF) {
+			cnss_get_xiaomi_bdf_elf_file_name(filename_tmp, filename_len);
+		} else if (plat_priv->board_info.board_id < 0xFF) {
 			snprintf(filename_tmp, filename_len,
 				 ELF_BDF_FILE_NAME_PREFIX "%02x",
 				 plat_priv->board_info.board_id);
@@ -694,10 +749,7 @@ static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
 		}
 		break;
 	case CNSS_BDF_REGDB:
-		if (hw_platform_ver == HARDWARE_PLATFORM_LMI)
-			snprintf(filename_tmp, filename_len, REGDB_FILE_NAME_J11);
-		else
-			snprintf(filename_tmp, filename_len, REGDB_FILE_NAME);
+		cnss_get_xiaomi_bdf_regdb_file_name(filename_tmp, filename_len);
 		break;
 	case CNSS_BDF_DUMMY:
 		cnss_pr_dbg("CNSS_BDF_DUMMY is set, sending dummy BDF\n");
