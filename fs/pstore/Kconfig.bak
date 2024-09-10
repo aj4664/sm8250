@@ -157,8 +157,11 @@ config PSTORE_RAM
 
 config PSTORE_LAST_KMSG
 	bool "export /proc/last_kmsg"
+<<<<<<< HEAD
+	default y
+=======
 	default y if BOARD_XIAOMI
-support to extract last_kmsg through procfs)
+>>>>>>> c5730c0366db (fs: pstore: Add support to extract last_kmsg through procfs)
 	depends on PSTORE
 	help
 	  When the option is enabled, pstore will export a proc filesystem
