@@ -66,6 +66,7 @@ run_merge_config() {
 		"${krnl_config_dir}/../${soc}-perf_defconfig" \
 		"${krnl_config_dir}/xiaomi-${soc}-common.config" \
 		"${krnl_config_dir}/${soc}-custom.config" \
+		"${krnl_config_dir}/sm8250-common.config" \
 		"${krnl_config_dir}/${device}.config")
 
 	case "$ret" in
