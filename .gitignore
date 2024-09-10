@@ -135,16 +135,4 @@ all.config
 # fetched Android config fragments
 kernel/configs/android-*.cfg
 
-#
-# Ignoring Android.bp link file
-#
-Android.bp
-
-# Tech package directories
-#techpack/
-
-# Out dir
-/out/
-
-# Build log
-build.log
+out/
