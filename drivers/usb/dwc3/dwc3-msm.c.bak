@@ -4656,7 +4656,11 @@ static int dwc3_otg_start_peripheral(struct dwc3_msm *mdwc, int on)
 		schedule_delayed_work(&mdwc->perf_vote_work,
 				msecs_to_jiffies(1000 * PM_QOS_SAMPLE_SEC));
 
+<<<<<<< HEAD
+#ifdef CONFIG_PS5169
+=======
 #if defined(CONFIG_BOARD_DAGU) && !defined(CONFIG_NO_PS_USB3)
+>>>>>>> 755bea013ad0 (Fix build problem)
 		if (!has_dp_flag)
 			ps5169_cfg_usb();
 #endif
