@@ -1,4 +1,4 @@
 [submodule "KernelSU"]
 	path = KernelSU
-	url = https://github.com/rsuntk/KernelSU
-	branch = susfs-v1.5.5
+	url = https://github.com/ShirkNeko/KernelSU
+	branch = susfs-dev
