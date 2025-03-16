@@ -789,6 +789,7 @@ check_timers_list(struct list_head *timers,
 			return t->expires;
 
 		t->firing = 1;
+		t->firing_cpu = smp_processor_id();
 		list_move_tail(&t->entry, firing);
 	}
 
@@ -1135,6 +1136,20 @@ static inline int fastpath_timer_check(struct task_struct *tsk)
 	return 0;
 }
 
+static DEFINE_PER_CPU(spinlock_t, cpu_timer_expiry_lock) = __SPIN_LOCK_UNLOCKED(cpu_timer_expiry_lock);
+
+void cpu_timers_grab_expiry_lock(struct k_itimer *timer)
+{
+	int cpu = timer->it.cpu.firing_cpu;
+
+	if (cpu >= 0) {
+		spinlock_t *expiry_lock = per_cpu_ptr(&cpu_timer_expiry_lock, cpu);
+
+		spin_lock_irq(expiry_lock);
+		spin_unlock_irq(expiry_lock);
+	}
+}
+
 /*
  * This is called from the timer interrupt handler.  The irq handler has
  * already updated our counts.  We need to check if any timers fire now.
@@ -1145,6 +1160,7 @@ void run_posix_cpu_timers(struct task_struct *tsk)
 	LIST_HEAD(firing);
 	struct k_itimer *timer, *next;
 	unsigned long flags;
+	spinlock_t *expiry_lock;
 
 	lockdep_assert_irqs_disabled();
 
@@ -1154,6 +1170,9 @@ void run_posix_cpu_timers(struct task_struct *tsk)
 	 */
 	if (!fastpath_timer_check(tsk))
 		return;
+
+	expiry_lock = this_cpu_ptr(&cpu_timer_expiry_lock);
+	spin_lock(expiry_lock);
 
 	if (!lock_task_sighand(tsk, &flags))
 		return;
@@ -1189,6 +1208,7 @@ void run_posix_cpu_timers(struct task_struct *tsk)
 		list_del_init(&timer->it.cpu.entry);
 		cpu_firing = timer->it.cpu.firing;
 		timer->it.cpu.firing = 0;
+		timer->it.cpu.firing_cpu = -1;
 		/*
 		 * The firing flag is -1 if we collided with a reset
 		 * of the timer, which already reported this
@@ -1198,6 +1218,7 @@ void run_posix_cpu_timers(struct task_struct *tsk)
 			cpu_timer_fire(timer);
 		spin_unlock(&timer->it_lock);
 	}
+	spin_unlock(expiry_lock);
 }
 
 /*
@@ -1318,6 +1339,8 @@ static int do_cpu_nanosleep(const clockid_t which_clock, int flags,
 		spin_unlock_irq(&timer.it_lock);
 
 		while (error == TIMER_RETRY) {
+
+			cpu_timers_grab_expiry_lock(&timer);
 			/*
 			 * We need to handle case when timer was or is in the
 			 * middle of firing. In other cases we already freed
