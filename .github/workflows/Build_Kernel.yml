@@ -111,15 +111,16 @@ jobs:
           CLANG_PATH=${pwd}/toolchain/clang/bin
           GCC64_PATH=${pwd}/toolchain/gcc/gcc64/bin
           GCC32_PATH=${pwd}/toolchain/gcc/gcc32/bin
-          export PATH=${pwd}/toolchain/clang/bin:$PATH
+          
+          export PATH=$PATH:$CLANG_PATH
 
           DEVICE="${{ github.event.inputs.target_device }}"
           SYSTEM="${{ github.event.inputs.compiled_system }}"
           KSU="${{ github.event.inputs.kernelsu_variant }}"
 
-          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=$GCC64/aarch64-linux-android- CROSS_COMPILE_COMPAT=$GCC32/arm-linux-androideabi- CROSS_COMPILE_ARM32=$GCC32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=clang++ LD=ld.lld HOSTLD=ld.lld KCFLAGS+=-Wno-error O=out"
+          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=$GCC64_PATH/aarch64-linux-android- CROSS_COMPILE_COMPAT=$GCC32_PATH/arm-linux-androideabi- CROSS_COMPILE_ARM32=$GCC32_PATH/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=clang++ LD=ld.lld HOSTLD=ld.lld KCFLAGS+=-Wno-error O=out"
 
-          if [ "$DEVICE" == "ALL" ]; then
+          if [ "$DEVICE" == "All" ]; then
               echo "Sorry,but build for All devices is not support now"
               exit 1
           fi
