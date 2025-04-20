@@ -108,6 +108,7 @@ jobs:
           ccache --max-size=2G
           ccache --set-config=compression=true
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
+          mkdir -p "$CONFIG/kernel_platform/toolchain/clang"
           
       - name: Restore ccache from cache
         uses: actions/cache@v4
@@ -129,7 +130,6 @@ jobs:
       - name: Download Google Clang Toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
-          mkdir -p $CONFIG/kernel_platform/toolchain/clang
           wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz > /dev/null 2>&1
           tar -xzvf clang-r547379.tar.gz
           rm clang-r547379.tar.gz
