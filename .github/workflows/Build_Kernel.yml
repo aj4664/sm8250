@@ -123,8 +123,6 @@ jobs:
         with:
           path: |
             $CONFIG/kernel_platform/toolchain/clang
-            $CONFIG/kernel_platform/toolchain/gcc/gcc64
-            $CONFIG/kernel_platform/toolchain/gcc/gcc32
           key: toolchain
           restore-keys: toolchain
             
