@@ -1,0 +1,247 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_device:
+        description: 'Target Device [目标设备,All暂不可用]'
+        required: true
+        default: 'umi'
+        type: choice
+        options:
+          - 'umi'
+          - 'cmi'
+          - 'cas'
+          - 'thyme'
+          - 'munch'
+          - 'dagu'
+          - 'elish'
+          - 'enuma'
+          - 'alioth'
+          - 'apollo'
+          - 'lmi'
+          - 'psyche'
+          - 'pipa'
+          - 'All'
+
+      compiled_system:
+        description: 'Compiled System [适用系统,All暂不可用]'
+        required: true
+        type: choice
+        default: 'MIUI'
+        options:
+          - 'MIUI'
+          - 'AOSP'
+          - 'All'
+        
+      kernelsu_variant:
+        description: 'KernelSU Variant [KernelSU 变体]'
+        required: true
+        type: choice
+        default: 'SukiSU-Ultra'
+        options:
+          - 'SukiSU-Ultra'
+          - 'RKSU'
+          - 'KernelSU'
+          - 'None'
+
+      build_type:
+        description: 'Build Type [内核构建类型]'
+        required: true
+        type: choice
+        default: 'Release'
+        options:
+          - 'Release'
+          - 'Dev'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone Kernel Source
+        run: |
+          git clone https://github.com/yspbwx2010/kernel_xiaomi_sm8250_mod.git --depth=1 kernel_platform
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            bc binutils-dev bison build-essential ca-certifications ccache cmake curl file flex \
+            git libelf-dev libssl-dev make ninjs-build python3-dev texinfo u-boot-tools xz-utils \
+            zlib1g-dev libncurses-dev wget zip cpio python3 python3-pip tree gcc
+            
+      - name: Download Google Clang Toolchain
+        run: |
+          mkdir -p kernel_platform/toolchain/clang
+          cd kernel_platform/toolchain/clang
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz
+          tar -xzvf clang-r547379.tar.gz
+          rm clang-r547379.tar.gz
+
+      - name: Sync LineageOS GCC Toolchain
+        run: |
+          cd kernel_platform
+          git submodule update --init --remote toolchain/gcc/gcc64
+          git submodule update --init --remote toolchain/gcc/gcc32
+
+      - name: Setup KernelSU
+        run: |
+          cd kernel_platform
+
+          KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
+
+          if [ "$KSU_VARIANT" -eq "SukiSU-Ultra" ]; then
+              echo "KernelSU Enabled: "$KSU_VARIANT"
+              curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/susfs-dev/kernel/setup.sh" | bash -s susfs-dev
+          elif [ "$KSU_VARIANT" -eq "RKSU" ]; then
+              echo "KernelSU Enabled: "$KSU_VARIANT"
+              curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/susfs-v1.5.5/kernel/setup.sh" | bash -s susfs-v1.5.5
+          elif [ "$KSU_VARIANT" -eq "KernelSU" ]; then
+              echo "KernelSU Enabled: "$KSU_VARIANT"
+              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
+          else 
+              echo "KernelSU is disabled"
+          fi
+          
+      - name: Build Kernel
+        run: |
+          cd kernel_platform
+
+          CLANG_PATH=${pwd}/toolchain/clang/bin
+          GCC64_PATH=${pwd}/toolchain/gcc/gcc64/bin
+          GCC32_PATH=${pwd}/toolchain/gcc/gcc32/bin
+
+          DEVICE="${{ github.event.inputs.target_device }}"
+          SYSTEM="${{ github.event.inputs.compiled_system }}"
+          KSU="${{ github.event.inputs.kernelsu_variant }}"
+
+          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=$GCC64/aarch64-linux-android- CROSS_COMPILE_COMPAT=$GCC32/arm-linux-androideabi- CROSS_COMPILE_ARM32=$GCC32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=clang++ LD=ld.lld HOSTLD=ld.lld KCFLAGS+=-Wno-error O=out"
+
+          if [ "$DEVICE" == "ALL" ]; then
+              echo "Sorry,but build for All devices is not support now"
+              exit 1
+          fi
+
+          make $MAKE_ARGS -j$(nproc --all) ${DEVICE}_defconfig
+
+          if [ "$SYSTEM" == "MIUI" ]; then
+              scripts/config --file out/.config \
+                  --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
+                  -e PERF_CRITICAL_RT_TASK	\
+                  -e SF_BINDER		\
+                  -e OVERLAY_FS		\
+                  -d DEBUG_FS \
+                  -e MIGT \
+                  -e MIGT_ENERGY_MODEL \
+                  -e MIHW \
+                  -e PACKAGE_RUNTIME_INFO \
+                  -e BINDER_OPT \
+                  -e KPERFEVENTS \
+                  -e MILLET \
+                  -e PERF_HUMANTASK \
+                  -d LTO_CLANG \
+                  -d LOCALVERSION_AUTO \
+                  -e SF_BINDER \
+                  -e XIAOMI_MIUI \
+                  -d MI_MEMORY_SYSFS \
+                  -e TASK_DELAY_ACCT \
+                  -e MIUI_ZRAM_MEMORY_TRACKING \
+                  -d CONFIG_MODULE_SIG_SHA512 \
+                  -d CONFIG_MODULE_SIG_HASH \
+                  -e MI_FRAGMENTION \
+                  -e PERF_HELPER \
+                  -e BOOTUP_RECLAIM \
+                  -e MI_RECLAIM \
+                  -e RTMM \
+          elif [ "$SYSTEM" == "All" ]; then
+              echo "Sorry,but build for All system is not support now"
+              exit 1
+          fi
+
+          if [ "$KSU" -eq "SukiSU-Ultra" ]; then
+              scripts/config --file out/.config \
+                  -e KSU
+                  -e KPM
+                  -e KSU_SUSFS
+                  -e KSU_SUSFS_HAS_MAGIC_MOUNT
+                  -e KSU_SUSFS_SUS_PATH
+                  -e KSU_SUSFS_SUS_MOUNT
+                  -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT
+                  -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
+                  -e KSU_SUSFS_SUS_KSTAT
+                  -d KSU_SUSFS_SUS_OVERLAYFS
+                  -e KSU_SUSFS_TRY_UMOUNT
+                  -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT
+                  -e KSU_SUSFS_SPOOF_UNAME
+                  -e KSU_SUSFS_ENABLE_LOG
+                  -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+                  -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+                  -e KSU_SUSFS_OPEN_REDIRECT
+                  -d KSU_SUSFS_SUS_SU
+          elif [ "$KSU" -eq "RKSU" ]; then
+              scripts/config --file out/.config \
+                  -e KSU
+                  -e KSU_SUSFS
+                  -e KSU_SUSFS_HAS_MAGIC_MOUNT
+                  -e KSU_SUSFS_SUS_PATH
+                  -e KSU_SUSFS_SUS_MOUNT
+                  -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT
+                  -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
+                  -e KSU_SUSFS_SUS_KSTAT
+                  -d KSU_SUSFS_SUS_OVERLAYFS
+                  -e KSU_SUSFS_TRY_UMOUNT
+                  -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT
+                  -e KSU_SUSFS_SPOOF_UNAME
+                  -e KSU_SUSFS_ENABLE_LOG
+                  -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+                  -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+                  -e KSU_SUSFS_OPEN_REDIRECT
+                  -d KSU_SUSFS_SUS_SU
+          elif [ "$KSU" -eq "KernelSU" ]; then
+              scripts/config --file out/.config -e KSU
+          fi
+
+          make $MAKE_ARGS -j$(nproc --all)
+
+          if [ -f "out/arch/arm64/boot/Image" ]
+              echo "Build successfully"
+          else
+              echo "Image file not found,Build failed"
+              exit 1
+          fi
+
+      - name: Compress the kernel to AnyKernel3
+        run: |
+          cd kernel_platform
+          mkdir out_ak3
+
+          git clone https://github.com/osm0sis/AnyKernel3.git --depth=1 AnyKernel3
+
+          cp out/arch/arm64/boot/Image AnyKernel3
+
+          zip -r \
+              ./out_ak3/${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}.zip \
+              ./AnyKernel3/*
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ steps.pwd.outputs.workspace-folder }}/kernel_platform/out_ak3/*.zip
+          name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
+          tag_name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
+          body: |
+            ----------------English----------------
+            Target Device: ${{ github.event.inputs.target_device }}
+            Compiled System: ${{ github.event.inputs.compiled_system }}
+            KernelSU Variant: ${{ github.event.inputs.kernelsu_variant }}
+            Build Type: ${{ github.event.inputs.build_type }}
+            ------------------中文------------------
+            目标机型: ${{ github.event.inputs.target_device }}
+            适用系统: ${{ github.event.inputs.compiled_system }}
+            KernelSU变体: ${{ github.event.inputs.kernelsu_variant }}
+            构建类型: ${{ github.event.inputs.build_type }}
+            ----------------------------------------
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
