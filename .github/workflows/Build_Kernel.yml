@@ -112,8 +112,8 @@ jobs:
           key: toolchain-${{ runner.os }}-v1
             
       - name: Download Google Clang Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
-          if: steps.cache-toolchain.outputs.cache-hit != 'true'
           mkdir -p kernel_platform/toolchain/clang
           mkdir -p kernel_platform/toolchain/clang
           wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz > /dev/null 2>&1
@@ -121,8 +121,8 @@ jobs:
           rm clang-r547379.tar.gz
 
       - name: Sync LineageOS GCC Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
-          if: steps.cache-toolchain.outputs.cache-hit != 'true'
           cd kernel_platform
           git submodule update --init --remote toolchain/gcc/gcc64
           git submodule update --init --remote toolchain/gcc/gcc32
@@ -257,7 +257,7 @@ jobs:
               exit 1
           fi
 
-      - name: 修补 Image 文件
+      - name: KPM patching of Image files
         run: |
             echo "Patching Image file..."
             cd out/arch/arm64/boot
