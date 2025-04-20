@@ -286,18 +286,20 @@ jobs:
               ./out_ak3/${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}.zip \
               ./AnyKernel3/*
 
-      - name: 上传编译资产
+      - name: Uploading compiled assets
         uses: actions/upload-artifact@v4
         with:
+          name: kernel
           path: |
-            *.zip
-            
+            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out_ak3/*.zip
+            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out/arch/arm64/boot/*.img
       
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{ steps.pwd.outputs.workspace-folder }}/kernel_platform/out_ak3/*.zip
+            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out_ak3/*.zip
+            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out/arch/arm64/boot/*.img
           name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
           tag_name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
           body: |
