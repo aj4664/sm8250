@@ -113,9 +113,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ${{ inputs.target_device }}-${{ inputs.compiled_system }}-${{ inputs.compiled_system }}-${{ inputs.kernelsu_variant }}-${{ inputs.build_type }}-ccache-${{ github.sha }}
+          key: ccache
           restore-keys: |
-            ${{ inputs.target_device }}-${{ inputs.compiled_system }}-${{ inputs.compiled_system }}-${{ inputs.kernelsu_variant }}-${{ inputs.build_type }}-ccache-
+            ccache
 
       - name: Caching toolchain
         id: cache-toolchain
