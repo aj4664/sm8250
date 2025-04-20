@@ -74,7 +74,7 @@ jobs:
       - name: Download Google Clang Toolchain
         run: |
           mkdir -p kernel_platform/toolchain/clang
-          cd kernel_platform/toolchain/clang
+          mkdir -p kernel_platform/toolchain/clang
           wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz
           tar -xzvf clang-r547379.tar.gz
           rm clang-r547379.tar.gz
@@ -111,8 +111,10 @@ jobs:
           CLANG_PATH=${pwd}/toolchain/clang/bin
           GCC64_PATH=${pwd}/toolchain/gcc/gcc64/bin
           GCC32_PATH=${pwd}/toolchain/gcc/gcc32/bin
-          
-          export PATH=$PATH:$CLANG_PATH
+
+          export PATH=$GCC32_PATH:$PATH
+          export PATH=$GCC64_PATH:$PATH
+          export PATH=$CLANG_PATH:$PATH
 
           DEVICE="${{ github.event.inputs.target_device }}"
           SYSTEM="${{ github.event.inputs.compiled_system }}"
