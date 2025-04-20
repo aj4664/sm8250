@@ -75,7 +75,7 @@ jobs:
         run: |
           mkdir -p kernel_platform/toolchain/clang
           mkdir -p kernel_platform/toolchain/clang
-          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz > /dev/null 2>$1
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz > /dev/null 2>&1
           tar -xzvf clang-r547379.tar.gz
           rm clang-r547379.tar.gz
 
