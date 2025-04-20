@@ -276,7 +276,9 @@ jobs:
 
       - name: KPM patching of Image files
         run: |
-          if [ "$KSU_VARIANT" == "SukiSU-Ultra" ]; then
+          KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
+          
+          if [ $KSU_VARIANT == "SukiSU-Ultra" ]; then
             echo "Patching Image file..."
             cd $CONFIG/kernel_platform/out/arch/arm64/boot
             curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
