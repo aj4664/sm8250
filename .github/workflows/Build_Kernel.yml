@@ -92,16 +92,16 @@ jobs:
           KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
 
           if [ "$KSU_VARIANT" == "SukiSU-Ultra" ]; then
-              echo "KernelSU Enabled: $KSU_VARIANT"
-              curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/susfs-dev/kernel/setup.sh" | bash -s susfs-dev
+            echo "KernelSU Enabled: $KSU_VARIANT"
+            curl -LSs https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/susfs-dev/kernel/setup.sh | bash -s susfs-dev
           elif [ "$KSU_VARIANT" == "RKSU" ]; then
-              echo "KernelSU Enabled: $KSU_VARIANT"
-              curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/susfs-v1.5.5/kernel/setup.sh" | bash -s susfs-v1.5.5
+            echo "KernelSU Enabled: $KSU_VARIANT"
+            curl -LSs https://raw.githubusercontent.com/rsuntk/KernelSU/susfs-v1.5.5/kernel/setup.sh | bash -s susfs-v1.5.5
           elif [ "$KSU_VARIANT" == "KernelSU" ]; then
-              echo "KernelSU Enabled: $KSU_VARIANT"
-              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
-          else 
-              echo "KernelSU is disabled"
+            echo "KernelSU Enabled: $KSU_VARIANT"
+            curl -LSs https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh | bash -s v0.9.5
+          else
+            echo "KernelSU is disabled"
           fi
           
       - name: Build Kernel
