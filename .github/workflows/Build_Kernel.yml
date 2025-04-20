@@ -57,7 +57,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_HARDLINK: "true"
     steps:
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
@@ -81,9 +84,36 @@ jobs:
             bc binutils-dev bison build-essential ca-certificates ccache cmake curl file flex \
             git libelf-dev libssl-dev make ninja-build python3-dev texinfo u-boot-tools xz-utils \
             zlib1g-dev libncurses-dev wget zip cpio python3 python3-pip tree gcc clang lld llvm
+
+      - name: Config ccache
+        run: |
+          mkdir -p ~/.cache
+          ccache --version
+          ccache --max-size=2G
+          ccache --set-config=compression=true
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
+          
+      - name: Restore ccache from cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ${{ inputs.target_device }}-${{ inputs.compiled_system }}-${{ inputs.compiled_system }}-${{ inputs.kernelsu_variant }}-${{ inputs.build_type }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ inputs.target_device }}-${{ inputs.compiled_system }}-${{ inputs.compiled_system }}-${{ inputs.kernelsu_variant }}-${{ inputs.build_type }}-ccache-
+
+      - name: Caching toolchain
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            kernel_platform/toolchain/clang
+            kernel_platform/toolchain/gcc/gcc64
+            kernel_platform/toolchain/gcc/gcc32
+          key: toolchain-${{ runner.os }}-v1
             
       - name: Download Google Clang Toolchain
         run: |
+          if: steps.cache-toolchain.outputs.cache-hit != 'true'
           mkdir -p kernel_platform/toolchain/clang
           mkdir -p kernel_platform/toolchain/clang
           wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz > /dev/null 2>&1
@@ -92,6 +122,7 @@ jobs:
 
       - name: Sync LineageOS GCC Toolchain
         run: |
+          if: steps.cache-toolchain.outputs.cache-hit != 'true'
           cd kernel_platform
           git submodule update --init --remote toolchain/gcc/gcc64
           git submodule update --init --remote toolchain/gcc/gcc32
@@ -131,7 +162,7 @@ jobs:
           SYSTEM="${{ github.event.inputs.compiled_system }}"
           KSU="${{ github.event.inputs.kernelsu_variant }}"
 
-          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=./toolchain/gcc/gcc64/aarch64-linux-android- CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=clang++ LD=ld.lld HOSTLD=ld.lld KCFLAGS+=-Wno-error O=out"
+          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=./toolchain/gcc/gcc64/aarch64-linux-android- CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=ccache clang CXX=ccache clang++ HOSTCC=ccache clang HOSTCXX=ccache clang++ LD=ld.lld HOSTLD=ld.lld KCFLAGS+=-Wno-error O=out"
 
           if [ "$DEVICE" == "All" ]; then
               echo "Sorry,but build for All devices is not support now"
