@@ -112,9 +112,11 @@ jobs:
           GCC64_PATH=${pwd}/toolchain/gcc/gcc64/bin
           GCC32_PATH=${pwd}/toolchain/gcc/gcc32/bin
 
-          #export PATH=$GCC32_PATH:$PATH
-          #export PATH=$GCC64_PATH:$PATH
-          echo "PATH=$CLANG_PATH:$PATH" >> $GITHUB_ENV
+          export PATH=$GCC32_PATH:$PATH
+          export PATH=$GCC64_PATH:$PATH
+          export PATH=$CLANG_PATH:$PATH
+
+          ls $CLANG_PATH
 
           DEVICE="${{ github.event.inputs.target_device }}"
           SYSTEM="${{ github.event.inputs.compiled_system }}"
