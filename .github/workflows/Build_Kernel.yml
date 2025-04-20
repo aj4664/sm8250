@@ -85,7 +85,7 @@ jobs:
             git libelf-dev libssl-dev make ninja-build python3-dev texinfo u-boot-tools xz-utils \
             zlib1g-dev libncurses-dev wget zip cpio python3 python3-pip tree gcc clang lld llvm
 
-      - name: Config ccache
+      - name: 配置 ccache
         run: |
           mkdir -p ~/.cache
           ccache --version
@@ -93,7 +93,7 @@ jobs:
           ccache --set-config=compression=true
           echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
           
-      - name: Restore ccache from cache
+      - name: 从缓存中还原ccache
         uses: actions/cache@v4
         with:
           path: ~/.ccache
@@ -101,7 +101,7 @@ jobs:
           restore-keys: |
             ${{ inputs.target_device }}-${{ inputs.compiled_system }}-${{ inputs.compiled_system }}-${{ inputs.kernelsu_variant }}-${{ inputs.build_type }}-ccache-
 
-      - name: Caching toolchain
+      - name: 缓存工具链
         id: cache-toolchain
         uses: actions/cache@v4
         with:
@@ -256,6 +256,17 @@ jobs:
               echo "Image file not found,Build failed"
               exit 1
           fi
+
+      - name: Perform KPM Patch Mirroring
+        run: |
+            echo "Patching Image file..."
+            cd out/arch/arm64/boot/Image
+            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
+            chmod 777 patch
+            ./patch
+            rm -rf Image
+            mv oImage Image
+            cd ../../../..
 
       - name: Compress the kernel to AnyKernel3
         run: |
