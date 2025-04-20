@@ -11,28 +11,51 @@ on:
         required: true
         default: 'umi'
         type: choice
-        options: ['umi', 'cmi', 'cas', 'thyme', 'munch', 'dagu', 'elish', 'enuma', 'alioth', 'apollo', 'lmi', 'psyche', 'pipa', 'All']
+        options:
+          - 'umi'
+          - 'cmi'
+          - 'cas'
+          - 'thyme'
+          - 'munch'
+          - 'dagu'
+          - 'elish'
+          - 'enuma'
+          - 'alioth'
+          - 'apollo'
+          - 'lmi'
+          - 'psyche'
+          - 'pipa'
+          - 'All'
 
       compiled_system:
         description: '适用系统 (Compiled System) [All暂不可用]'
         required: true
         type: choice
         default: 'MIUI'
-        options: ['MIUI', 'AOSP', 'All']
+        options:
+          - 'MIUI'
+          - 'AOSP'
+          - 'All'
         
       kernelsu_variant:
         description: 'KernelSU 变体 (KernelSU Variant)'
         required: true
         type: choice
         default: 'SukiSU-Ultra'
-        options: ['SukiSU-Ultra', 'RKSU', 'KernelSU', 'None']
+        options:
+          - 'SukiSU-Ultra'
+          - 'RKSU'
+          - 'KernelSU'
+          - 'None'
 
       build_type:
         description: '内核构建类型 (Build Type)'
         required: true
         type: choice
         default: 'Release'
-        options: ['Release', 'Dev']
+        options:
+          - 'Release'
+          - 'Dev'
 
 jobs:
   build:
@@ -40,15 +63,31 @@ jobs:
     permissions:
       contents: write
       actions: write
+    
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
       KERNEL_ROOT: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
-      KERNEL_IMAGE: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out/arch/arm64/boot/Image"
-      KERNEL_DTBO: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out/arch/arm64/boot/dtbo.img"
-      KERNEL_DTB: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out/arch/arm64/boot/dtb.img"
+      RELEASE_TAG: "Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}"
+      
+    timeout-minutes: 120
+    
     steps:
+      - name: 检查构建参数
+        id: check_params
+        run: |
+          DEVICE="${{ github.event.inputs.target_device }}"
+          SYSTEM="${{ github.event.inputs.compiled_system }}"
+          
+          if [ "$DEVICE" == "All" ] || [ "$SYSTEM" == "All" ]; then
+            echo "::error::目前不支持为'All'选项构建，请选择特定设备和系统"
+            exit 1
+          fi
+          
+          echo "正在为设备[$DEVICE]构建[$SYSTEM]系统内核，KernelSU变体[${{ github.event.inputs.kernelsu_variant }}]"
+          echo "build_filename=${DEVICE}_${{ github.event.inputs.kernelsu_variant }}_${SYSTEM}_${{ github.event.inputs.build_type }}_${{ github.run_id }}" >> $GITHUB_OUTPUT
+
       - name: 最大化构建空间
         uses: easimon/maximize-build-space@master
         with:
@@ -61,219 +100,449 @@ jobs:
           remove-codeql: "true"
           
       - name: 克隆内核源码
-        id: clone
-        continue-on-error: true
         run: |
+          echo "===> 正在克隆内核源码..."
           git clone https://github.com/yspbwx2010/kernel_xiaomi_sm8250_mod.git --depth=1 kernel_platform
-          
-      - name: 检查源码克隆状态
-        if: steps.clone.outcome == 'failure'
-        run: |
-          echo "❌ 内核源码克隆失败，请检查仓库地址是否正确"
-          exit 1
+          if [ $? -ne 0 ]; then
+            echo "::error::克隆内核源码失败"
+            exit 1
+          fi
+          echo "===> 内核源码克隆完成"
           
       - name: 安装依赖
+        id: install_deps
         run: |
-          sudo apt update
-          sudo apt install -y bc binutils-dev bison build-essential ccache clang cmake curl file flex gcc git libelf-dev libncurses-dev libssl-dev lld llvm make ninja-build python3 python3-dev python3-pip texinfo tree u-boot-tools wget xz-utils zip zlib1g-dev
+          echo "===> 正在安装构建依赖..."
+          sudo apt update || { echo "::error::更新软件源失败"; exit 1; }
+          
+          sudo apt install -y \
+            bc binutils-dev bison build-essential ca-certificates ccache cmake curl file flex \
+            git libelf-dev libssl-dev make ninja-build python3-dev texinfo u-boot-tools xz-utils \
+            zlib1g-dev libncurses-dev wget zip cpio python3 python3-pip tree gcc clang lld llvm || \
+            { echo "::error::安装依赖失败"; exit 1; }
+          
+          echo "===> 依赖安装完成"
 
       - name: 配置 ccache
+        id: setup_ccache
         run: |
+          echo "===> 正在配置 ccache..."
           mkdir -p ~/.cache/ccache
-          ccache --max-size=2G
+          ccache --version
+          
+          # 根据设备调整缓存大小
+          DEVICE="${{ github.event.inputs.target_device }}"
+          if [ "$DEVICE" == "umi" ] || [ "$DEVICE" == "cmi" ]; then
+            # 较复杂的设备使用更大的缓存
+            CACHE_SIZE="3G"
+          else
+            CACHE_SIZE="2G"
+          fi
+          
+          ccache --max-size=$CACHE_SIZE
           ccache --set-config=compression=true
+          ccache --zero-stats
           echo "CCACHE_DIR=$HOME/.cache/ccache" >> $GITHUB_ENV
+          
+          echo "===> ccache 配置完成，缓存大小: $CACHE_SIZE"
           
       - name: 从缓存恢复 ccache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ccache
-          key: ccache-${{ github.event.inputs.target_device }}-${{ github.event.inputs.compiled_system }}
-          restore-keys: ccache-${{ github.event.inputs.target_device }}-
+          key: ccache-${{ github.event.inputs.target_device }}-${{ github.event.inputs.compiled_system }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ github.event.inputs.target_device }}-${{ github.event.inputs.compiled_system }}-
+            ccache-${{ github.event.inputs.target_device }}-
+            ccache-
+
+      - name: 创建工具链目录
+        run: |
+          mkdir -p "$KERNEL_ROOT/kernel_platform/toolchain/clang"
             
       - name: 缓存工具链
         id: cache-toolchain
         uses: actions/cache@v4
         with:
           path: ${{ env.KERNEL_ROOT }}/kernel_platform/toolchain
-          key: toolchain-clang-r547379-gcc
+          key: toolchain-clang-r547379-gcc-${{ hashFiles('**/README.md') }}
+          restore-keys: |
+            toolchain-clang-r547379-gcc-
+            toolchain-
             
-      - name: 下载工具链
+      - name: 下载 Google Clang 工具链
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
+          echo "===> 正在下载 Google Clang 工具链..."
           cd "$KERNEL_ROOT/kernel_platform"
           mkdir -p toolchain/clang
           cd toolchain/clang
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz -O clang-r547379.tar.gz || { echo "❌ 工具链下载失败"; exit 1; }
-          tar -xf clang-r547379.tar.gz || { echo "❌ 工具链解压失败"; exit 1; }
+          
+          wget -q --show-progress https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz -O clang-r547379.tar.gz || \
+            { echo "::error::下载 Clang 工具链失败"; exit 1; }
+          
+          echo "===> 正在解压 Clang 工具链..."
+          tar -xzf clang-r547379.tar.gz
           rm clang-r547379.tar.gz
-          git submodule update --init --remote toolchain/gcc/gcc64 || { echo "❌ GCC64 工具链同步失败"; exit 1; }
-          git submodule update --init --remote toolchain/gcc/gcc32 || { echo "❌ GCC32 工具链同步失败"; exit 1; }
+          
+          # 校验工具链
+          if [ ! -f "bin/clang" ]; then
+            echo "::error::工具链解压后未找到 clang 二进制文件"
+            exit 1
+          fi
+          
+          echo "===> Clang 工具链准备完成"
+
+      - name: 同步 LineageOS GCC 工具链
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: |
+          echo "===> 正在同步 LineageOS GCC 工具链..."
+          cd "$KERNEL_ROOT/kernel_platform"
+          
+          git submodule update --init --remote toolchain/gcc/gcc64 || \
+            { echo "::error::同步 gcc64 工具链失败"; exit 1; }
+          
+          git submodule update --init --remote toolchain/gcc/gcc32 || \
+            { echo "::error::同步 gcc32 工具链失败"; exit 1; }
+          
+          # 校验工具链
+          if [ ! -d "toolchain/gcc/gcc64/bin" ] || [ ! -d "toolchain/gcc/gcc32/bin" ]; then
+            echo "::error::GCC 工具链子模块同步失败"
+            exit 1
+          fi
+          
+          echo "===> GCC 工具链准备完成"
 
       - name: 配置 KernelSU
+        id: setup_ksu
         run: |
           cd "$KERNEL_ROOT/kernel_platform"
           KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
           
-          case "$KSU_VARIANT" in
-            "SukiSU-Ultra")
-              curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/susfs-dev/kernel/setup.sh" | bash -s susfs-dev || { echo "❌ SukiSU-Ultra 配置失败"; exit 1; }
-              ;;
-            "RKSU")
-              curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/susfs-v1.5.5/kernel/setup.sh" | bash -s susfs-v1.5.5 || { echo "❌ RKSU 配置失败"; exit 1; }
-              ;;
-            "KernelSU")
-              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5 || { echo "❌ KernelSU 配置失败"; exit 1; }
-              ;;
-          esac
+          echo "===> 配置 KernelSU 变体: $KSU_VARIANT"
+          
+          if [ "$KSU_VARIANT" == "SukiSU-Ultra" ]; then
+            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/susfs-dev/kernel/setup.sh" | bash -s susfs-dev
+            if [ $? -ne 0 ]; then
+              echo "::error::SukiSU-Ultra 配置失败"
+              exit 1
+            fi
+            echo "kpm_patch=true" >> $GITHUB_OUTPUT
+            
+          elif [ "$KSU_VARIANT" == "RKSU" ]; then
+            curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/susfs-v1.5.5/kernel/setup.sh" | bash -s susfs-v1.5.5
+            if [ $? -ne 0 ]; then
+              echo "::error::RKSU 配置失败"
+              exit 1
+            fi
+            echo "kpm_patch=false" >> $GITHUB_OUTPUT
+            
+          elif [ "$KSU_VARIANT" == "KernelSU" ]; then
+            curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
+            if [ $? -ne 0 ]; then
+              echo "::error::KernelSU 配置失败"
+              exit 1
+            fi
+            echo "kpm_patch=false" >> $GITHUB_OUTPUT
+            
+          else
+            echo "KernelSU 已禁用"
+            echo "kpm_patch=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "===> KernelSU 配置完成"
           
       - name: 构建内核
+        id: build_kernel
         run: |
           cd "$KERNEL_ROOT/kernel_platform"
+
+          # 设置环境变量
+          export CCACHE=1
+          export PATH="/usr/bin:$PATH"
           
           DEVICE="${{ github.event.inputs.target_device }}"
           SYSTEM="${{ github.event.inputs.compiled_system }}"
           KSU="${{ github.event.inputs.kernelsu_variant }}"
+          BUILD_TYPE="${{ github.event.inputs.build_type }}"
           
-          [[ "$DEVICE" == "All" || "$SYSTEM" == "All" ]] && { echo "❌ 不支持 All 选项"; exit 1; }
-          
-          export CCACHE=1
-          export PATH="/usr/bin:$PATH"
-          
+          # 设置构建参数
           MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 \
             CROSS_COMPILE=./toolchain/gcc/gcc64/aarch64-linux-android- \
             CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- \
             CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- \
-            CLANG_TRIPLE=aarch64-linux-gnu- CC=clang CXX=clang++ \
-            HOSTCC=clang HOSTCXX=clang++ LD=ld.lld HOSTLD=ld.lld \
-            KCFLAGS=-Wno-error O=out"
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=clang++ \
+            LD=ld.lld HOSTLD=ld.lld \
+            KCFLAGS=-Wno-error \
+            O=out"
 
-          echo "📝 生成设备配置..."
-          make $MAKE_ARGS -j$(nproc --all) ${DEVICE}_defconfig || { echo "❌ 设备配置生成失败"; exit 1; }
+          # 检查构建类型
+          if [ "$BUILD_TYPE" == "Dev" ]; then
+            # 开发版本使用更多调试选项
+            MAKE_ARGS="$MAKE_ARGS KCFLAGS=-g"
+            echo "===> 构建类型: 开发版 (启用调试信息)"
+          else
+            echo "===> 构建类型: 发布版"
+          fi
 
+          echo "===> 正在生成 ${DEVICE} 的配置..."
+          make $MAKE_ARGS -j$(nproc --all) ${DEVICE}_defconfig || {
+            echo "::error::设备配置生成失败"
+            exit 1
+          }
+
+          # 根据系统类型修改配置
           if [ "$SYSTEM" == "MIUI" ]; then
-            echo "📝 应用 MIUI 配置..."
-            scripts/config --file out/.config \
-              --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
-              -e PERF_CRITICAL_RT_TASK -e SF_BINDER -e OVERLAY_FS -d DEBUG_FS \
-              -e MIGT -e MIGT_ENERGY_MODEL -e MIHW -e PACKAGE_RUNTIME_INFO \
-              -e BINDER_OPT -e KPERFEVENTS -e MILLET -e PERF_HUMANTASK \
-              -d LTO_CLANG -d LOCALVERSION_AUTO -e SF_BINDER -e XIAOMI_MIUI \
-              -d MI_MEMORY_SYSFS -e TASK_DELAY_ACCT -e MIUI_ZRAM_MEMORY_TRACKING \
-              -d CONFIG_MODULE_SIG_SHA512 -d CONFIG_MODULE_SIG_HASH \
-              -e MI_FRAGMENTION -e PERF_HELPER -e BOOTUP_RECLAIM \
-              -e MI_RECLAIM -e RTMM || { echo "❌ MIUI 配置应用失败"; exit 1; }
+              echo "===> 应用 MIUI 特定配置..."
+              scripts/config --file out/.config \
+                  --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
+                  -e PERF_CRITICAL_RT_TASK \
+                  -e SF_BINDER \
+                  -e OVERLAY_FS \
+                  -d DEBUG_FS \
+                  -e MIGT \
+                  -e MIGT_ENERGY_MODEL \
+                  -e MIHW \
+                  -e PACKAGE_RUNTIME_INFO \
+                  -e BINDER_OPT \
+                  -e KPERFEVENTS \
+                  -e MILLET \
+                  -e PERF_HUMANTASK \
+                  -d LTO_CLANG \
+                  -d LOCALVERSION_AUTO \
+                  -e SF_BINDER \
+                  -e XIAOMI_MIUI \
+                  -d MI_MEMORY_SYSFS \
+                  -e TASK_DELAY_ACCT \
+                  -e MIUI_ZRAM_MEMORY_TRACKING \
+                  -d CONFIG_MODULE_SIG_SHA512 \
+                  -d CONFIG_MODULE_SIG_HASH \
+                  -e MI_FRAGMENTION \
+                  -e PERF_HELPER \
+                  -e BOOTUP_RECLAIM \
+                  -e MI_RECLAIM \
+                  -e RTMM
+          else
+              echo "===> 应用 AOSP 特定配置..."
+              scripts/config --file out/.config \
+                  -d XIAOMI_MIUI \
+                  -d MIGT \
+                  -d MIHW \
+                  -d MILLET
           fi
 
+          # 根据 KernelSU 变体修改配置
           if [ "$KSU" == "SukiSU-Ultra" ] || [ "$KSU" == "RKSU" ]; then
-            echo "📝 应用 KernelSU 配置..."
-            scripts/config --file out/.config \
-              -e KSU -e KSU_SUSFS -e KSU_SUSFS_HAS_MAGIC_MOUNT \
-              -e KSU_SUSFS_SUS_PATH -e KSU_SUSFS_SUS_MOUNT \
-              -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
-              -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT -e KSU_SUSFS_SUS_KSTAT \
-              -d KSU_SUSFS_SUS_OVERLAYFS -e KSU_SUSFS_TRY_UMOUNT \
-              -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT \
-              -e KSU_SUSFS_SPOOF_UNAME -e KSU_SUSFS_ENABLE_LOG \
-              -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
-              -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
-              -e KSU_SUSFS_OPEN_REDIRECT -d KSU_SUSFS_SUS_SU || { echo "❌ KernelSU 配置应用失败"; exit 1; }
-            [ "$KSU" == "SukiSU-Ultra" ] && scripts/config --file out/.config -e KPM
+              echo "===> 应用 $KSU 配置..."
+              scripts/config --file out/.config \
+                  -e KSU \
+                  ${KSU == "SukiSU-Ultra" ? "-e KPM" : ""} \
+                  -e KSU_SUSFS \
+                  -e KSU_SUSFS_HAS_MAGIC_MOUNT \
+                  -e KSU_SUSFS_SUS_PATH \
+                  -e KSU_SUSFS_SUS_MOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
+                  -e KSU_SUSFS_SUS_KSTAT \
+                  -d KSU_SUSFS_SUS_OVERLAYFS \
+                  -e KSU_SUSFS_TRY_UMOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT \
+                  -e KSU_SUSFS_SPOOF_UNAME \
+                  -e KSU_SUSFS_ENABLE_LOG \
+                  -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
+                  -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
+                  -e KSU_SUSFS_OPEN_REDIRECT \
+                  -d KSU_SUSFS_SUS_SU
           elif [ "$KSU" == "KernelSU" ]; then
-            scripts/config --file out/.config -e KSU || { echo "❌ KernelSU 配置应用失败"; exit 1; }
+              echo "===> 应用 KernelSU 配置..."
+              scripts/config --file out/.config -e KSU
           fi
 
-          echo "🔨 开始构建内核..."
-          make $MAKE_ARGS -j$(nproc --all) || { echo "❌ 内核构建失败"; exit 1; }
-          
-          # 检查必要文件
-          for file in "$KERNEL_IMAGE" "$KERNEL_DTBO" "$KERNEL_DTB"; do
-            if [ ! -f "$file" ]; then
-              echo "❌ 找不到文件: $file"
+          # 确保配置更改生效
+          make $MAKE_ARGS olddefconfig
+
+          # 开始构建
+          echo "===> 开始构建内核..."
+          time make $MAKE_ARGS -j$(nproc --all) || {
+            echo "::error::内核构建失败"
+            exit 1
+          }
+
+          # 验证构建结果
+          if [ -f "$KERNEL_ROOT/kernel_platform/out/arch/arm64/boot/Image" ]; then
+              echo "✅ 构建成功"
+              echo "kernel_built=true" >> $GITHUB_OUTPUT
+          else
+              echo "❌ 找不到 Image 文件，构建失败"
+              echo "::error::找不到生成的内核镜像"
+              echo "kernel_built=false" >> $GITHUB_OUTPUT
               exit 1
-            fi
-          done
+          fi
           
-          echo "✅ 内核构建成功"
-          echo "📊 构建统计信息:"
+          # 显示内核版本信息
+          echo "===> 内核版本信息:"
+          cat "$KERNEL_ROOT/kernel_platform/out/.config" | grep "CONFIG_LOCALVERSION="
+          
+          # 显示 ccache 统计信息
+          echo "===> ccache 统计信息:"
           ccache --show-stats
 
-      - name: KPM 修补
-        if: github.event.inputs.kernelsu_variant == 'SukiSU-Ultra'
+      - name: KPM 修补 Image 文件
+        if: steps.setup_ksu.outputs.kpm_patch == 'true' && steps.build_kernel.outputs.kernel_built == 'true'
         run: |
+          echo "===> 正在执行 KPM 修补..."
           cd "$KERNEL_ROOT/kernel_platform/out/arch/arm64/boot"
-          echo "📝 下载 KPM 修补工具..."
-          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch || { echo "❌ KPM 修补工具下载失败"; exit 1; }
-          chmod +x patch
-          echo "🔧 执行 KPM 修补..."
-          ./patch || { echo "❌ KPM 修补失败"; exit 1; }
-          mv oImage Image || { echo "❌ 修补后的镜像重命名失败"; exit 1; }
-          echo "✅ KPM 修补完成"
+          
+          # 创建原始镜像备份
+          cp Image Image.original
+          
+          # 下载修补工具
+          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
+          if [ $? -ne 0 ]; then
+            echo "::error::下载 KPM 修补工具失败，使用原始镜像继续"
+            exit 0
+          fi
+          
+          chmod 777 patch
+          ./patch
+          
+          # 验证修补结果
+          if [ -f "oImage" ]; then
+            rm -rf Image
+            mv oImage Image
+            echo "✅ Image 文件修补完成"
+          else
+            echo "::warning::修补失败，恢复使用原始镜像"
+            cp Image.original Image
+          fi
+          
+          # 清理
+          rm -f patch Image.original
 
-      - name: 打包 AnyKernel3
+      - name: 打包内核到 AnyKernel3
+        if: steps.build_kernel.outputs.kernel_built == 'true'
+        id: package_kernel
         run: |
+          # 定义变量
           DEVICE="${{ github.event.inputs.target_device }}"
-          KSU="${{ github.event.inputs.kernelsu_variant }}"
           SYSTEM="${{ github.event.inputs.compiled_system }}"
+          KSU="${{ github.event.inputs.kernelsu_variant }}"
           BUILD_TYPE="${{ github.event.inputs.build_type }}"
-          ZIP_NAME="${DEVICE}_${KSU}_${SYSTEM}_${BUILD_TYPE}_${{ github.run_id }}.zip"
+          BUILD_ID="${{ github.run_id }}"
+          ZIP_NAME="${DEVICE}_${KSU}_${SYSTEM}_${BUILD_TYPE}_${BUILD_ID}.zip"
           
-          cd "$KERNEL_ROOT"
-          echo "📥 克隆 AnyKernel3..."
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git || { echo "❌ AnyKernel3 克隆失败"; exit 1; }
+          echo "===> 开始打包内核到 AnyKernel3..."
           
-          echo "📝 复制内核文件..."
-          cp "$KERNEL_IMAGE" AnyKernel3/ || { echo "❌ Image 复制失败"; exit 1; }
-          cp "$KERNEL_DTBO" AnyKernel3/ || { echo "❌ DTBO 复制失败"; exit 1; }
-          cp "$KERNEL_DTB" AnyKernel3/ || { echo "❌ DTB 复制失败"; exit 1; }
+          # 创建目录并克隆 AnyKernel3
+          mkdir -p "$KERNEL_ROOT/ak3_out"
+          cd "$KERNEL_ROOT/ak3_out"
+          git clone https://github.com/osm0sis/AnyKernel3.git --depth=1
+          
+          if [ $? -ne 0 ]; then
+            echo "::error::克隆 AnyKernel3 失败"
+            exit 1
+          fi
           
           cd AnyKernel3
-          echo "📦 创建刷机包..."
-          zip -r9 "../$ZIP_NAME" * || { echo "❌ 刷机包创建失败"; exit 1; }
+          
+          # 删除不需要的文件
+          rm -rf .git .github
+          
+          # 根据设备配置 AnyKernel3 属性
+          echo "===> 配置 AnyKernel3 属性..."
+          
+          # 修改 AnyKernel3 属性以匹配目标设备
+          sed -i "s/do.devicecheck=1/do.devicecheck=0/g" anykernel.sh
+          sed -i "s/device.name1=/device.name1=$DEVICE/g" anykernel.sh
+          sed -i "s/supported.versions=/supported.versions=$SYSTEM/g" anykernel.sh
+          
+          # 设置刷机包信息
+          CURRENT_DATE=$(date +"%Y-%m-%d")
+          sed -i "s/kernel.string=.*/kernel.string=Custom Kernel ($KSU) for $DEVICE [$CURRENT_DATE]/g" anykernel.sh
+          
+          # 复制内核镜像
+          echo "===> 复制内核镜像..."
+          cp "$KERNEL_ROOT/kernel_platform/out/arch/arm64/boot/Image" ./
+          
+          # 打包
+          echo "===> 创建刷机包: $ZIP_NAME"
+          cd ..
+          zip -r9 "$ZIP_NAME" AnyKernel3
+          
+          if [ $? -ne 0 ]; then
+            echo "::error::打包内核刷机包失败"
+            exit 1
+          fi
+          
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
           echo "✅ 刷机包创建成功: $ZIP_NAME"
 
-      - name: 上传结果
-        if: always()
+      - name: 上传编译结果
+        if: steps.build_kernel.outputs.kernel_built == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.event.inputs.build_type }}
+          name: ${{ steps.check_params.outputs.build_filename }}
           path: |
-            ${{ env.KERNEL_ROOT }}/*.zip
-            ${{ env.KERNEL_IMAGE }}
-            ${{ env.KERNEL_DTBO }}
-            ${{ env.KERNEL_DTB }}
-          if-no-files-found: error
+            ${{ env.KERNEL_ROOT }}/ak3_out/*.zip
+            ${{ env.KERNEL_ROOT }}/kernel_platform/out/arch/arm64/boot/Image
       
-      - name: 发布 Release
-        if: success()
+      - name: 发布到 Release
+        if: steps.build_kernel.outputs.kernel_built == 'true'
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            ${{ env.KERNEL_ROOT }}/*.zip
-            ${{ env.KERNEL_IMAGE }}
-            ${{ env.KERNEL_DTBO }}
-            ${{ env.KERNEL_DTB }}
-          name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
-          tag_name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
+            ${{ env.KERNEL_ROOT }}/ak3_out/*.zip
+            ${{ env.KERNEL_ROOT }}/kernel_platform/out/arch/arm64/boot/Image
+          name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ env.RELEASE_TAG }}
           body: |
-            ----------------English----------------
-            Target Device: ${{ github.event.inputs.target_device }}
-            Compiled System: ${{ github.event.inputs.compiled_system }}
-            KernelSU Variant: ${{ github.event.inputs.kernelsu_variant }}
-            Build Type: ${{ github.event.inputs.build_type }}
-            ------------------中文------------------
-            目标机型: ${{ github.event.inputs.target_device }}
-            适用系统: ${{ github.event.inputs.compiled_system }}
-            KernelSU变体: ${{ github.event.inputs.kernelsu_variant }}
-            构建类型: ${{ github.event.inputs.build_type }}
-            ----------------------------------------
+            ## 内核构建信息
             
-            📝 构建日志请查看 Actions 页面
+            ### 英文 | English
+            **Target Device**: ${{ github.event.inputs.target_device }}
+            **Compiled System**: ${{ github.event.inputs.compiled_system }}
+            **KernelSU Variant**: ${{ github.event.inputs.kernelsu_variant }}
+            **Build Type**: ${{ github.event.inputs.build_type }}
+            **Build Date**: $(date +"%Y-%m-%d %H:%M:%S")
+            
+            ### 中文
+            **目标机型**: ${{ github.event.inputs.target_device }}
+            **适用系统**: ${{ github.event.inputs.compiled_system }}
+            **KernelSU变体**: ${{ github.event.inputs.kernelsu_variant }}
+            **构建类型**: ${{ github.event.inputs.build_type }}
+            **构建日期**: $(date +"%Y-%m-%d %H:%M:%S")
+            
+            ---
+            
+            ### 安装说明
+            1. 下载 zip 刷机包
+            2. 使用 Recovery 模式刷入，或通过 SukiSU 应用刷入
+            3. 重启设备
+            
+            ### 注意事项
+            - 请在刷入前备份重要数据
+            - 如遇问题请在 Issues 中反馈
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 清理工作区
+      - name: 构建总结
         if: always()
         run: |
-          rm -rf "$KERNEL_ROOT"
-          echo "🧹 工作区清理完成"
+          echo "===> 构建总结"
+          echo "设备: ${{ github.event.inputs.target_device }}"
+          echo "系统: ${{ github.event.inputs.compiled_system }}"
+          echo "KernelSU变体: ${{ github.event.inputs.kernelsu_variant }}"
+          echo "构建类型: ${{ github.event.inputs.build_type }}"
+          
+          if [ "${{ steps.build_kernel.outputs.kernel_built }}" == "true" ]; then
+            echo "✅ 构建状态: 成功"
+            echo "刷机包: ${{ steps.package_kernel.outputs.zip_name }}"
+            echo "发布标签: ${{ env.RELEASE_TAG }}"
+          else
+            echo "❌ 构建状态: 失败"
+          fi
+          
+          # ccache 统计
+          echo "ccache 统计:"
+          ccache --show-stats
