@@ -152,7 +152,7 @@ jobs:
 
       - name: Setup KernelSU
         run: |
-          "cd $CONFIG/kernel_platform"
+          cd "$CONFIG/kernel_platform"
 
           KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
 
