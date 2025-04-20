@@ -286,6 +286,13 @@ jobs:
               ./out_ak3/${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}.zip \
               ./AnyKernel3/*
 
+      - name: 上传编译资产
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            *.zip
+            
+      
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
