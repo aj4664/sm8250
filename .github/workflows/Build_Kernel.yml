@@ -125,7 +125,8 @@ jobs:
             $CONFIG/kernel_platform/toolchain/clang
             $CONFIG/kernel_platform/toolchain/gcc/gcc64
             $CONFIG/kernel_platform/toolchain/gcc/gcc32
-          key: toolchain-${{ runner.os }}-v1
+          key: toolchain
+          restore-keys: toolchain
             
       - name: Download Google Clang Toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
