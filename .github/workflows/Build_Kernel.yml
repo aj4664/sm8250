@@ -140,10 +140,19 @@ jobs:
           cd $CONFIG/kernel_platform
           git submodule update --init --remote toolchain/gcc/gcc64
           git submodule update --init --remote toolchain/gcc/gcc32
+          
+      - name: Setting the CONFIG environment variable
+        run: |
+          # Set CONFIG dynamically based on inputs values
+          CONFIG="/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
+          # Set CONFIG as an environment variable for future steps
+          echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+
+          echo "CONFIG set to: $CONFIG"
 
       - name: Setup KernelSU
         run: |
-          cd $CONFIG/kernel_platform
+          "cd $CONFIG/kernel_platform"
 
           KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
 
@@ -162,7 +171,7 @@ jobs:
           
       - name: Build Kernel
         run: |
-          cd $CONFIG/kernel_platform
+          cd "$CONFIG/kernel_platform"
 
           CLANG_PATH=$(pwd)/toolchain/clang/bin
           GCC64_PATH=$(pwd)/toolchain/gcc/gcc64/bin
@@ -280,25 +289,24 @@ jobs:
           
           if [ $KSU_VARIANT == "SukiSU-Ultra" ]; then
             echo "Patching Image file..."
-            cd $CONFIG/kernel_platform/out/arch/arm64/boot
+            cd "$CONFIG/kernel_platform/out/arch/arm64/boot"
             curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
             chmod 777 patch
             ./patch
             rm -rf Image
             mv oImage Image
-            cd $CONFIG
           fi
 
 
       - name: Compress the kernel to AnyKernel3
         run: |
-          cd $CONFIG/kernel_platform
+          cd "$CONFIG/kernel_platform"
           mkdir -p out_ak3
           cd out_ak3
           git clone https://github.com/osm0sis/AnyKernel3.git --depth=1 AnyKernel3
           rm -rf ./AnyKernel3/.git
           rm -rf ./AnyKernel3/.github
-          cp $CONFIG/kernel_platform/out/arch/arm64/boot/Image ./AnyKernel3
+          cp "$CONFIG/kernel_platform/out/arch/arm64/boot/Image" ./AnyKernel3
           zip -r ${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}.zip ./AnyKernel3/*
 
       - name: Uploading compiled assets
@@ -306,15 +314,15 @@ jobs:
         with:
           name: kernel
           path: |
-            $CONFIG/kernel_platform/out_ak3/*.zip
-            $CONFIG/kernel_platform/out/arch/arm64/boot/Image
+            "$CONFIG/kernel_platform/out_ak3/*.zip"
+            "$CONFIG/kernel_platform/out/arch/arm64/boot/Image"
       
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            $CONFIG/kernel_platform/out_ak3/*.zip
-            $CONFIG/kernel_platform/out/arch/arm64/boot/Image
+            "$CONFIG/kernel_platform/out_ak3/*.zip"
+            "$CONFIG/kernel_platform/out/arch/arm64/boot/Image"
           name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
           tag_name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
           body: |
