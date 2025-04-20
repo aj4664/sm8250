@@ -120,7 +120,7 @@ jobs:
           SYSTEM="${{ github.event.inputs.compiled_system }}"
           KSU="${{ github.event.inputs.kernelsu_variant }}"
 
-          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=$GCC64_PATH/aarch64-linux-android- CROSS_COMPILE_COMPAT=$GCC32_PATH/arm-linux-androideabi- CROSS_COMPILE_ARM32=$GCC32_PATH/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=clang++ LD=ld.lld HOSTLD=ld.lld KCFLAGS+=-Wno-error O=out"
+          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=$GCC64_PATH/aarch64-linux-android- CROSS_COMPILE_COMPAT=$GCC32_PATH/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang KCFLAGS+=-Wno-error O=out"
 
           if [ "$DEVICE" == "All" ]; then
               echo "Sorry,but build for All devices is not support now"
@@ -157,7 +157,7 @@ jobs:
                   -e PERF_HELPER \
                   -e BOOTUP_RECLAIM \
                   -e MI_RECLAIM \
-                  -e RTMM \
+                  -e RTMM
           elif [ "$SYSTEM" == "All" ]; then
               echo "Sorry,but build for All system is not support now"
               exit 1
@@ -165,42 +165,42 @@ jobs:
 
           if [ "$KSU" == "SukiSU-Ultra" ]; then
               scripts/config --file out/.config \
-                  -e KSU
-                  -e KPM
-                  -e KSU_SUSFS
-                  -e KSU_SUSFS_HAS_MAGIC_MOUNT
-                  -e KSU_SUSFS_SUS_PATH
-                  -e KSU_SUSFS_SUS_MOUNT
-                  -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT
-                  -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
-                  -e KSU_SUSFS_SUS_KSTAT
-                  -d KSU_SUSFS_SUS_OVERLAYFS
-                  -e KSU_SUSFS_TRY_UMOUNT
-                  -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT
-                  -e KSU_SUSFS_SPOOF_UNAME
-                  -e KSU_SUSFS_ENABLE_LOG
-                  -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
-                  -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
-                  -e KSU_SUSFS_OPEN_REDIRECT
+                  -e KSU \
+                  -e KPM \
+                  -e KSU_SUSFS \
+                  -e KSU_SUSFS_HAS_MAGIC_MOUNT \
+                  -e KSU_SUSFS_SUS_PATH \
+                  -e KSU_SUSFS_SUS_MOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
+                  -e KSU_SUSFS_SUS_KSTAT \
+                  -d KSU_SUSFS_SUS_OVERLAYFS \
+                  -e KSU_SUSFS_TRY_UMOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT \
+                  -e KSU_SUSFS_SPOOF_UNAME \
+                  -e KSU_SUSFS_ENABLE_LOG \
+                  -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
+                  -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
+                  -e KSU_SUSFS_OPEN_REDIRECT \
                   -d KSU_SUSFS_SUS_SU
           elif [ "$KSU" == "RKSU" ]; then
               scripts/config --file out/.config \
-                  -e KSU
-                  -e KSU_SUSFS
-                  -e KSU_SUSFS_HAS_MAGIC_MOUNT
-                  -e KSU_SUSFS_SUS_PATH
-                  -e KSU_SUSFS_SUS_MOUNT
-                  -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT
-                  -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
-                  -e KSU_SUSFS_SUS_KSTAT
-                  -d KSU_SUSFS_SUS_OVERLAYFS
-                  -e KSU_SUSFS_TRY_UMOUNT
-                  -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT
-                  -e KSU_SUSFS_SPOOF_UNAME
-                  -e KSU_SUSFS_ENABLE_LOG
-                  -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
-                  -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
-                  -e KSU_SUSFS_OPEN_REDIRECT
+                  -e KSU \
+                  -e KSU_SUSFS \
+                  -e KSU_SUSFS_HAS_MAGIC_MOUNT \
+                  -e KSU_SUSFS_SUS_PATH \
+                  -e KSU_SUSFS_SUS_MOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
+                  -e KSU_SUSFS_SUS_KSTAT \
+                  -d KSU_SUSFS_SUS_OVERLAYFS \
+                  -e KSU_SUSFS_TRY_UMOUNT \
+                  -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT \
+                  -e KSU_SUSFS_SPOOF_UNAME \
+                  -e KSU_SUSFS_ENABLE_LOG \
+                  -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
+                  -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
+                  -e KSU_SUSFS_OPEN_REDIRECT \
                   -d KSU_SUSFS_SUS_SU
           elif [ "$KSU" == "KernelSU" ]; then
               scripts/config --file out/.config -e KSU
