@@ -67,8 +67,8 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y \
-            bc binutils-dev bison build-essential ca-certifications ccache cmake curl file flex \
-            git libelf-dev libssl-dev make ninjs-build python3-dev texinfo u-boot-tools xz-utils \
+            bc binutils-dev bison build-essential ca-certificates ccache cmake curl file flex \
+            git libelf-dev libssl-dev make ninja-build python3-dev texinfo u-boot-tools xz-utils \
             zlib1g-dev libncurses-dev wget zip cpio python3 python3-pip tree gcc
             
       - name: Download Google Clang Toolchain
