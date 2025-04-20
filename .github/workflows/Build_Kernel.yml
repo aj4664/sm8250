@@ -267,6 +267,7 @@ jobs:
               echo "Image file not found,Build failed"
               exit 1
           fi
+          ccache --show-stats
 
       - name: KPM patching of Image files
         run: |
