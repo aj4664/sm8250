@@ -1,4 +1,7 @@
 name: Build Kernel
+permissions:
+  contents: write
+  actions: write
 
 on:
   workflow_dispatch:
@@ -57,6 +60,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
