@@ -161,7 +161,7 @@ jobs:
           SYSTEM="${{ github.event.inputs.compiled_system }}"
           KSU="${{ github.event.inputs.kernelsu_variant }}"
 
-          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=./toolchain/gcc/gcc64/aarch64-linux-android- CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC='/usr/bin/ccache clang' CXX='/usr/bin/ccache clang++' HOSTCC='/usr/bin/ccache clang' HOSTCXX='/usr/bin/ccache clang++' LD=ld.lld HOSTLD=ld.lld KCFLAGS+=-Wno-error O=out"
+          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=./toolchain/gcc/gcc64/aarch64-linux-android- CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC='/usr/bin/ccache clang' CXX='/usr/bin/ccache clang++' HOSTCC='/usr/bin/ccache clang' HOSTCXX='/usr/bin/ccache clang++' LD=ld.lld HOSTLD=ld.lld KCFLAGS=-Wno-error O=out"
 
           if [ "$DEVICE" == "All" ]; then
               echo "Sorry,but build for All devices is not support now"
