@@ -73,6 +73,16 @@ jobs:
           remove-haskell: "true"
           remove-codeql: "true"
           
+      - name: Setting the CONFIG environment variable
+        run: |
+          # Set CONFIG dynamically based on inputs values
+          CONFIG="/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
+
+          # Set CONFIG as an environment variable for future steps
+          echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+
+          echo "CONFIG set to: $CONFIG"
+          
       - name: Clone Kernel Source
         run: |
           git clone https://github.com/yspbwx2010/kernel_xiaomi_sm8250_mod.git --depth=1 kernel_platform
@@ -106,16 +116,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            kernel_platform/toolchain/clang
-            kernel_platform/toolchain/gcc/gcc64
-            kernel_platform/toolchain/gcc/gcc32
+            $CONFIG/kernel_platform/toolchain/clang
+            $CONFIG/kernel_platform/toolchain/gcc/gcc64
+            $CONFIG/kernel_platform/toolchain/gcc/gcc32
           key: toolchain-${{ runner.os }}-v1
             
       - name: Download Google Clang Toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
-          mkdir -p kernel_platform/toolchain/clang
-          mkdir -p kernel_platform/toolchain/clang
+          mkdir -p $CONFIG/kernel_platform/toolchain/clang
           wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz > /dev/null 2>&1
           tar -xzvf clang-r547379.tar.gz
           rm clang-r547379.tar.gz
@@ -123,13 +132,13 @@ jobs:
       - name: Sync LineageOS GCC Toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
-          cd kernel_platform
+          cd $CONFIG/kernel_platform
           git submodule update --init --remote toolchain/gcc/gcc64
           git submodule update --init --remote toolchain/gcc/gcc32
 
       - name: Setup KernelSU
         run: |
-          cd kernel_platform
+          cd $CONFIG/kernel_platform
 
           KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
 
@@ -148,7 +157,7 @@ jobs:
           
       - name: Build Kernel
         run: |
-          cd kernel_platform
+          cd $CONFIG/kernel_platform
 
           CLANG_PATH=$(pwd)/toolchain/clang/bin
           GCC64_PATH=$(pwd)/toolchain/gcc/gcc64/bin
@@ -263,19 +272,19 @@ jobs:
         run: |
           if [ "$KSU_VARIANT" == "SukiSU-Ultra" ]; then
             echo "Patching Image file..."
-            cd out/arch/arm64/boot
+            cd $CONFIG/kernel_platform/out/arch/arm64/boot
             curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
             chmod 777 patch
             ./patch
             rm -rf Image
             mv oImage Image
-            cd ../../..
+            cd $CONFIG
           fi
 
 
       - name: Compress the kernel to AnyKernel3
         run: |
-          cd kernel_platform
+          cd $CONFIG/kernel_platform
           mkdir out_ak3
 
           git clone https://github.com/osm0sis/AnyKernel3.git --depth=1 AnyKernel3
@@ -291,15 +300,15 @@ jobs:
         with:
           name: kernel
           path: |
-            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out_ak3/*.zip
-            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out/arch/arm64/boot/*.img
+            $CONFIG/kernel_platform/out_ak3/*.zip
+            $CONFIG/kernel_platform/out/arch/arm64/boot/*.img
       
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out_ak3/*.zip
-            /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/kernel_platform/out/arch/arm64/boot/*.img
+            $CONFIG/kernel_platform/out_ak3/*.zip
+            $CONFIG/kernel_platform/out/arch/arm64/boot/*.img
           name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
           tag_name: Kernel_${{ github.event.inputs.target_device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ github.run_id }}
           body: |
