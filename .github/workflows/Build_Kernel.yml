@@ -219,7 +219,7 @@ jobs:
 
           make $MAKE_ARGS -j$(nproc --all)
 
-          if [ -f "out/arch/arm64/boot/Image" ]
+          if [ -f "out/arch/arm64/boot/Image" ]; then
               echo "Build successfully"
           else
               echo "Image file not found,Build failed"
