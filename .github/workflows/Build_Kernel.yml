@@ -91,13 +91,13 @@ jobs:
 
           KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
 
-          if [ "$KSU_VARIANT" -eq "SukiSU-Ultra" ]; then
+          if [ "$KSU_VARIANT" == "SukiSU-Ultra" ]; then
               echo "KernelSU Enabled: $KSU_VARIANT"
               curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/susfs-dev/kernel/setup.sh" | bash -s susfs-dev
-          elif [ "$KSU_VARIANT" -eq "RKSU" ]; then
+          elif [ "$KSU_VARIANT" == "RKSU" ]; then
               echo "KernelSU Enabled: $KSU_VARIANT"
               curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/susfs-v1.5.5/kernel/setup.sh" | bash -s susfs-v1.5.5
-          elif [ "$KSU_VARIANT" -eq "KernelSU" ]; then
+          elif [ "$KSU_VARIANT" == "KernelSU" ]; then
               echo "KernelSU Enabled: $KSU_VARIANT"
               curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
           else 
@@ -111,6 +111,7 @@ jobs:
           CLANG_PATH=${pwd}/toolchain/clang/bin
           GCC64_PATH=${pwd}/toolchain/gcc/gcc64/bin
           GCC32_PATH=${pwd}/toolchain/gcc/gcc32/bin
+          export PATH=${pwd}/toolchain/clang/bin:$PATH
 
           DEVICE="${{ github.event.inputs.target_device }}"
           SYSTEM="${{ github.event.inputs.compiled_system }}"
@@ -159,7 +160,7 @@ jobs:
               exit 1
           fi
 
-          if [ "$KSU" -eq "SukiSU-Ultra" ]; then
+          if [ "$KSU" == "SukiSU-Ultra" ]; then
               scripts/config --file out/.config \
                   -e KSU
                   -e KPM
@@ -179,7 +180,7 @@ jobs:
                   -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
                   -e KSU_SUSFS_OPEN_REDIRECT
                   -d KSU_SUSFS_SUS_SU
-          elif [ "$KSU" -eq "RKSU" ]; then
+          elif [ "$KSU" == "RKSU" ]; then
               scripts/config --file out/.config \
                   -e KSU
                   -e KSU_SUSFS
@@ -198,7 +199,7 @@ jobs:
                   -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
                   -e KSU_SUSFS_OPEN_REDIRECT
                   -d KSU_SUSFS_SUS_SU
-          elif [ "$KSU" -eq "KernelSU" ]; then
+          elif [ "$KSU" == "KernelSU" ]; then
               scripts/config --file out/.config -e KSU
           fi
 
