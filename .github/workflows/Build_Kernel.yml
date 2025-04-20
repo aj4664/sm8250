@@ -108,9 +108,9 @@ jobs:
         run: |
           cd kernel_platform
 
-          CLANG_PATH=${{ steps.pwd.outputs.workspace-folder }}/kernel_platform/toolchain/clang/bin
-          GCC64_PATH=${{ steps.pwd.outputs.workspace-folder }}/kernel_platform/toolchain/gcc/gcc64/bin
-          GCC32_PATH=${{ steps.pwd.outputs.workspace-folder }}/kernel_platform/toolchain/gcc/gcc32/bin
+          CLANG_PATH=$(pwd)/toolchain/clang/bin
+          GCC64_PATH=$(pwd)/toolchain/gcc/gcc64/bin
+          GCC32_PATH=$(pwd)/toolchain/gcc/gcc32/bin
 
           export PATH=$GCC32_PATH:$PATH
           export PATH=$GCC64_PATH:$PATH
