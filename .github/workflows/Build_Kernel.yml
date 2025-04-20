@@ -260,6 +260,7 @@ jobs:
 
       - name: KPM patching of Image files
         run: |
+          if [ "$KSU_VARIANT" == "SukiSU-Ultra" ]; then
             echo "Patching Image file..."
             cd out/arch/arm64/boot
             curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
@@ -268,6 +269,7 @@ jobs:
             rm -rf Image
             mv oImage Image
             cd ../../..
+          fi
 
 
       - name: Compress the kernel to AnyKernel3
