@@ -329,7 +329,7 @@ jobs:
           # 根据 KernelSU 变体修改配置
           if [ "$KSU" == "SukiSU-Ultra" ] || [ "$KSU" == "RKSU" ]; then
               echo "应用 SukiSU-Ultra / RKSU 配置..."
-              scripts/config --file out/.config \
+              scripts/config --keep-case --file out/.config \
                   -e KSU \
                   -e KSU_SUSFS \
                   -e KSU_SUSFS_HAS_MAGIC_MOUNT \
@@ -347,6 +347,7 @@ jobs:
                   -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
                   -e KSU_SUSFS_OPEN_REDIRECT \
                   -d KSU_SUSFS_SUS_SU
+                  
           elif [ "$KSU" == "KernelSU" ]; then
               echo "应用 KernelSU 配置..."
               scripts/config --file out/.config -e KSU
