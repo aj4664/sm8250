@@ -81,7 +81,7 @@ jobs:
       CCACHE_HARDLINK: "true"
       KERNEL_ROOT: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
       # 设置构建参数
-      MAKE_ARGS: "ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=$KERNEL_ROOT/toolchain/gcc/gcc64/aarch64-linux-android- CROSS_COMPILE_COMPAT=$KERNEL_ROOT/toolchain/gcc/gcc32/arm-linux-androideabi- CROSS_COMPILE_ARM32=$KERNEL_ROOT/toolchain/gcc/gcc32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC='ccache clang' HOSTCC='ccache clang' HOSTCXX='ccache clang++' LD=ld.lld HOSTLD=ld.lld KCFLAGS=-Wno-error O=out"
+      MAKE_ARGS: ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=$KERNEL_ROOT/toolchain/gcc/gcc64/aarch64-linux-android- CROSS_COMPILE_COMPAT=$KERNEL_ROOT/toolchain/gcc/gcc32/arm-linux-androideabi- CROSS_COMPILE_ARM32=$KERNEL_ROOT/toolchain/gcc/gcc32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC="ccache clang" HOSTCC="ccache clang" HOSTCXX="ccache clang++" LD=ld.lld HOSTLD=ld.lld KCFLAGS=-Wno-error O=out
     steps:
       - name: 最大化构建空间
         uses: easimon/maximize-build-space@master
