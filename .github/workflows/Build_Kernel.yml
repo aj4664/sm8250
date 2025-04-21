@@ -93,16 +93,12 @@ jobs:
           remove-android: "true"
           remove-haskell: "true"
           remove-codeql: "true"
-          
-      - name: 克隆内核源码
-        run: |
-          git clone https://github.com/yspbwx2010/kernel_xiaomi_sm8250_mod.git --depth=1 kernel_platform
-          
+
       - name: 安装依赖
         run: |
-          sudo apt update
-          sudo apt upgrade -y && sudo apt install -y python3 git curl wegt ccache
-
+          sudo apt update && sudo apt upgrade -y
+          sudo apt install -y python3 git curl wget zip ccache 
+          
       - name: 配置 ccache
         run: |
           mkdir -p ~/.cache
@@ -119,6 +115,10 @@ jobs:
           restore-keys: |
             ccache-${{ github.event.inputs.target_device }}-
             ccache-
+            
+      - name: 克隆内核源码
+        run: |
+          git clone https://github.com/yspbwx2010/kernel_xiaomi_sm8250_mod.git --depth=1 kernel_platform
 
       - name: 创建工具链目录
         run: |
