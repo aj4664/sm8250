@@ -50,9 +50,12 @@ on:
 
       kpm_enable:
         description: '是否启用 KPM 支持? (KPM Support) [仅支持SukiSU-Ultra]'
-        required: false
-        type: boolean
-        default: true
+        required: true
+        type: choice
+        default: enable
+        options:
+          - enable
+          - disable
 
       kernel_version:
         description: '自定义内核版本号 (Kernel Version)'
@@ -354,7 +357,7 @@ jobs:
           fi
 
           # 判断KPM是否启用并开启相关配置
-          if [ "$KSU" == "SukiSU=Ultra" ] && [ "$KPM" == "true" ]; then
+          if [ "$KSU" == "SukiSU=Ultra" ] && [ "$KPM" == "enable" ]; then
               echo "开启 KPM 配置..."
               scripts/config --file out/.config \
               -e KPM
@@ -388,7 +391,7 @@ jobs:
           KSU_VARIANT="${{ github.event.inputs.kernelsu_variant }}"
           KPM_ENABLE="${{ github.event.inputs.kpm_enable }}"
           
-          if [ "$KSU_VARIANT" == "SukiSU-Ultra" ] && [ "$KPM_ENABLE" == "true" ]; then
+          if [ "$KSU_VARIANT" == "SukiSU-Ultra" ] && [ "$KPM_ENABLE" == "enable" ]; then
             echo "正在修补 Image 文件..."
             cd "$KERNEL_ROOT/kernel_platform/out/arch/arm64/boot"
             curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch
