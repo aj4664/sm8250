@@ -197,14 +197,14 @@ jobs:
             CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- \
             CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- \
             CLANG_TRIPLE=aarch64-linux-gnu- \
-            CC="ccache clang" HOSTCC="ccache clang" HOSTCXX="ccache clang++" \
+            CC="/usr/bin/ccache clang" HOSTCC="/usr/bin/ccache clang" HOSTCXX="/usr/bin/ccache clang++" \
             LD=ld.lld HOSTLD=ld.lld \
             KCFLAGS=-Wno-error \
             O=out"
 
           # 生成设备配置
           echo "正在生成 ${DEVICE} 的配置..."
-          make CCACHE=1 $MAKE_ARGS -j$(nproc --all) ${DEVICE}_defconfig
+          make $MAKE_ARGS -j$(nproc --all) ${DEVICE}_defconfig
 
           # 开启一些附加优化配置
           scripts/config --file out/.config \
