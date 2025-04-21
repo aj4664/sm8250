@@ -365,6 +365,7 @@ jobs:
           scripts/config --file out/.config \
             --set-str LOCALVERSION $VERSION \
             -e LOCALVERSION_AUTO
+          
           sed -i "s/-dirty/-Yun/g" scripts/setlocalversion
 
           # 开始构建
