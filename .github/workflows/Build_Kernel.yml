@@ -375,7 +375,7 @@ jobs:
 
           # 开始构建
           echo "开始构建内核..."
-          make CCACHE=1 $MAKE_ARGS -j$(nproc --all)
+          make $MAKE_ARGS -j$(nproc --all)
 
           # 验证构建结果
           if [ -f "$KERNEL_ROOT/kernel_platform/out/arch/arm64/boot/Image" ]; then
