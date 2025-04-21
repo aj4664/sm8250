@@ -165,8 +165,17 @@ jobs:
           
           # 下载 GCC
           echo "正在下载 GCC工具链..."
-          git submodule update --init --remote $TOOLCHAIN_DIR/gcc/gcc32
-          git submodule update --init --remote $TOOLCHAIN_DIR/gcc/gcc64
+          cd "$TOOLCHAIN_DIR/gcc/gcc64"
+          git init
+          git remote add origin https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git
+          git fetch --depth 1 origin
+          git checkout FETCH_HEAD
+          
+          cd "$TOOLCHAIN_DIR/gcc/gcc32"
+          git init
+          git remote add origin https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git
+          git fetch --depth 1 origin
+          git checkout FETCH_HEAD
           
           echo "✅ 工具链下载完成"
 
