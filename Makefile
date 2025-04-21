@@ -373,12 +373,15 @@ HOSTCC	= gcc
 HOSTCXX	= g++
 endif
 
-ifeq ($(CCACHE),1)
-HOSTCC	= ccache $(HOSTCC)
-HOSTCXX	= ccache $(HOSTCXX)
+ifneq ($(LLVM),)
+CC = clang
+else
+CC = gcc
 endif
 
 ifeq ($(CCACHE),1)
+HOSTCC	= ccache $(HOSTCC)
+HOSTCXX	= ccache $(HOSTCXX)
 CC		= ccache $(CC)
 endif
 
