@@ -119,6 +119,7 @@
  */
 
 struct menu_device {
+	int 		last_state_idx;
 	int             needs_update;
 	int             tick_wakeup;
 
