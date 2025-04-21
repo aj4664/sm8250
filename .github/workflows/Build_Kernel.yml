@@ -81,8 +81,6 @@ jobs:
       CCACHE_HARDLINK: "true"
       KERNEL_ROOT: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
       CCACHE_DIR: "~/.cache"
-      CCACHE: "1"
-      PATH: "/usr/bin:$PATH"
     steps:
       - name: 最大化构建空间
         uses: easimon/maximize-build-space@master
