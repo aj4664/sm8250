@@ -467,6 +467,5 @@ jobs:
             适用系统: ${{ github.event.inputs.compiled_system }}
             KernelSU变体: ${{ github.event.inputs.kernelsu_variant }}
             构建类型: ${{ github.event.inputs.build_type }}
-            ----------------------------------------
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
