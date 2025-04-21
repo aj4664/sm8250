@@ -407,7 +407,7 @@ endif
 export CCACHE_DIR=$(HOME)/.ccache
 export CCACHE_COMPRESS=1
 export CCACHE_COMPRESSLEVEL=6
-export CCACHE_MAXSIZE=10G
+export CCACHE_MAXSIZE=2G
 
 LEX		= flex
 YACC		= bison
