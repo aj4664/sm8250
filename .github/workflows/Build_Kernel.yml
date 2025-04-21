@@ -212,7 +212,6 @@ jobs:
             CROSS_COMPILE_COMPAT=$TOOLCHAIN_DIR/gcc/gcc32/bin/arm-linux-androideabi- \
             CROSS_COMPILE_ARM32=$TOOLCHAIN_DIR/gcc/gcc32/bin/arm-linux-androideabi- \
             CLANG_TRIPLE=aarch64-linux-gnu- \
-            CC=clang CXX=clang++ HOSTCC=clang HOSTCXX=cclang++ \
             LD=ld.lld HOSTLD=ld.lld \
             KCFLAGS=-Wno-error \
             O=out"
