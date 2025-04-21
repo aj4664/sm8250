@@ -480,23 +480,6 @@ jobs:
           # 复制内核镜像
           cp "$KERNEL_SOURCE/out/arch/arm64/boot/Image" ./
           
-          # 更新设备信息
-          if [ -f "anykernel.sh" ]; then
-            # 根据设备更新兼容设备列表
-            case "$DEVICE" in
-              umi)
-                sed -i 's/device.name[0-9]=.*/device.name1=umi/' anykernel.sh
-                ;;
-              cmi)
-                sed -i 's/device.name[0-9]=.*/device.name1=cmi/' anykernel.sh
-                ;;
-              # 这里可以添加更多设备的匹配规则
-              *)
-                sed -i 's/device.name[0-9]=.*/device.name1='"$DEVICE"'/' anykernel.sh
-                ;;
-            esac
-          fi
-          
           # 打包
           echo "📦 正在创建刷机包: $ZIP_NAME"
           cd ..
