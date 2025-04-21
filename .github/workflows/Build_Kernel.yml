@@ -68,6 +68,9 @@ jobs:
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
       KERNEL_ROOT: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
+      CCACHE_DIR: "~/.cache"
+      CCACHE: "1"
+      PATH: "/usr/bin:$PATH"
     steps:
       - name: 最大化构建空间
         uses: easimon/maximize-build-space@master
@@ -94,16 +97,16 @@ jobs:
 
       - name: 配置 ccache
         run: |
-          mkdir -p ~/.cache/ccache
+          mkdir -p ~/.cache
           ccache --version
           ccache --max-size=2G
           ccache --set-config=compression=true
-          echo "CCACHE_DIR=$HOME/.cache/ccache" >> $GITHUB_ENV
+          echo "CCACHE_DIR=$HOME/.cache" >> $GITHUB_ENV
           
       - name: 从缓存恢复 ccache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ccache
+          path: ~/.cache
           key: ccache-${{ github.event.inputs.target_device }}-${{ github.event.inputs.compiled_system }}
           restore-keys: |
             ccache-${{ github.event.inputs.target_device }}-
@@ -160,10 +163,6 @@ jobs:
       - name: 构建内核
         run: |
           cd "$KERNEL_ROOT/kernel_platform"
-
-          # 设置环境变量
-          export CCACHE=1
-          export PATH="/usr/bin:$PATH"
           
           DEVICE="${{ github.event.inputs.target_device }}"
           SYSTEM="${{ github.event.inputs.compiled_system }}"
