@@ -482,7 +482,6 @@ jobs:
           # 打包
           echo "📦 正在创建刷机包: $ZIP_NAME"
           zip -r "$ZIP_NAME" .
-          cd ..
           
           if [ -f "$ZIP_NAME" ]; then
             echo "✅ 刷机包创建成功: $ZIP_NAME"
