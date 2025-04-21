@@ -80,7 +80,6 @@ jobs:
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
       KERNEL_ROOT: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
-      CCACHE_DIR: "~/.cache"
     steps:
       - name: 最大化构建空间
         uses: easimon/maximize-build-space@master
@@ -100,6 +99,7 @@ jobs:
       - name: 安装依赖
         run: |
           sudo apt update
+          sudo apt upgrade -y
           sudo apt install -y \
             bc binutils-dev bison build-essential ca-certificates ccache cmake curl file flex \
             git libelf-dev libssl-dev make ninja-build python3-dev texinfo u-boot-tools xz-utils \
@@ -197,7 +197,7 @@ jobs:
             CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- \
             CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- \
             CLANG_TRIPLE=aarch64-linux-gnu- \
-            CC="/usr/bin/ccache clang" HOSTCC="/usr/bin/ccache clang" HOSTCXX="/usr/bin/ccache clang++" \
+            CC="ccache clang" HOSTCC="ccache clang" HOSTCXX="ccache clang++" \
             LD=ld.lld HOSTLD=ld.lld \
             KCFLAGS=-Wno-error \
             O=out"
