@@ -329,7 +329,7 @@ jobs:
           # 打包
           echo "正在创建刷机包: $ZIP_NAME"
           cd ..
-          zip -r "$ZIP_NAME" AnyKernel3
+          zip -r "$ZIP_NAME" AnyKernel3/*
 
       - name: 上传编译结果
         uses: actions/upload-artifact@v4
