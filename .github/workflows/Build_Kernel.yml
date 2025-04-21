@@ -486,10 +486,12 @@ jobs:
           if [ -f "$ZIP_NAME" ]; then
             echo "✅ 刷机包创建成功: $ZIP_NAME"
             ls -lh "$ZIP_NAME"
+            mv "$ZIP_NAME" ..
           else
             echo "❌ 刷机包创建失败"
             exit 1
           fi
+          
 
       - name: 📤 上传编译结果
         uses: actions/upload-artifact@v4
