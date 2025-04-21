@@ -197,7 +197,7 @@ jobs:
             CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- \
             CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- \
             CLANG_TRIPLE=aarch64-linux-gnu- \
-            CC="ccache clang" HOSTCC="ccache clang" HOSTCXX="ccache clang++" \
+            CC='ccache clang' HOSTCC='ccache clang' HOSTCXX='ccache clang++' \
             LD=ld.lld HOSTLD=ld.lld \
             KCFLAGS=-Wno-error \
             O=out"
