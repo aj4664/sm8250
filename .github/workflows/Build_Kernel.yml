@@ -80,6 +80,8 @@ jobs:
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
       KERNEL_ROOT: "/home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod"
+      # 设置构建参数
+      MAKE_ARGS: "ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 CROSS_COMPILE=./toolchain/gcc/gcc64/aarch64-linux-android- CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC='ccache clang' HOSTCC='ccache clang' HOSTCXX='ccache clang++' LD=ld.lld HOSTLD=ld.lld KCFLAGS=-Wno-error O=out"
     steps:
       - name: 最大化构建空间
         uses: easimon/maximize-build-space@master
@@ -190,17 +192,6 @@ jobs:
               echo "抱歉，目前不支持为所有系统构建"
               exit 1
           fi
-
-          # 设置构建参数
-          MAKE_ARGS="ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1 \
-            CROSS_COMPILE=./toolchain/gcc/gcc64/aarch64-linux-android- \
-            CROSS_COMPILE_COMPAT=./toolchain/gcc/gcc32/arm-linux-androideabi- \
-            CROSS_COMPILE_ARM32=./toolchain/gcc/gcc32/arm-linux-androideabi- \
-            CLANG_TRIPLE=aarch64-linux-gnu- \
-            CC='ccache clang' HOSTCC='ccache clang' HOSTCXX='ccache clang++' \
-            LD=ld.lld HOSTLD=ld.lld \
-            KCFLAGS=-Wno-error \
-            O=out"
 
           # 生成设备配置
           echo "正在生成 ${DEVICE} 的配置..."
