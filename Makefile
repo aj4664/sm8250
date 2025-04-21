@@ -372,6 +372,16 @@ else
 HOSTCC	= gcc
 HOSTCXX	= g++
 endif
+
+ifeq ($(CCACHE),1)
+HOSTCC	= ccache $(HOSTCC)
+HOSTCXX	= ccache $(HOSTCXX)
+endif
+
+ifeq ($(CCACHE),1)
+CC		= ccache $(CC)
+endif
+
 KBUILD_HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 \
 		-fomit-frame-pointer -std=gnu89 $(HOST_LFS_CFLAGS) \
 		$(HOSTCFLAGS)
