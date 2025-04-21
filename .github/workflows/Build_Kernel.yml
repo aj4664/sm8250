@@ -406,6 +406,13 @@ jobs:
             echo "KPM 未启用或 KernelSU 变体不支持 KPM !"
           fi
 
+      - name: 设置 Git Commit Hash 变量以方便命名
+        run: |
+          cd $KERNEL_ROOT
+
+          # 获取 Git Commit 哈希值以命名版本号
+          echo "GIT_COMMIT_ID=$(git rev-parse --short=6 HEAD)" >> $GITHUB_ENV
+
       - name: 打包内核到 AnyKernel3
         run: |
           # 定义变量
@@ -413,8 +420,8 @@ jobs:
           SYSTEM="${{ github.event.inputs.compiled_system }}"
           KSU="${{ github.event.inputs.kernelsu_variant }}"
           BUILD_TYPE="${{ github.event.inputs.build_type }}"
-          BUILD_ID="${{ github.run_id }}"
-          ZIP_NAME="${DEVICE}_${KSU}_${SYSTEM}_${BUILD_TYPE}_${BUILD_ID}.zip"
+          BUILD_ID="${{ env.GIT_COMMIT_ID }}"
+          ZIP_NAME="${DEVICE}_${KSU}_${SYSTEM}_${BUILD_ID}_${BUILD_TYPE}.zip"
           
           # 创建目录并克隆 AnyKernel3
           mkdir -p "$KERNEL_ROOT/ak3_out"
@@ -432,13 +439,6 @@ jobs:
           echo "正在创建刷机包: $ZIP_NAME"
           cd ..
           zip -r "$ZIP_NAME" AnyKernel3/*
-
-      - name: 设置一些变量准备上传
-        run: |
-          cd $KERNEL_ROOT
-
-          # 获取 git commit 哈希值以命名版本号
-          echo "GIT_COMMIT_ID=$(git rev-parse --short=6 HEAD)" >> $GITHUB_ENV
 
       - name: 上传编译结果
         uses: actions/upload-artifact@v4
