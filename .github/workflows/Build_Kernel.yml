@@ -364,10 +364,10 @@ jobs:
           fi
 
           # 修改内核版本号
-          echo "修改内核版本号..."
-          scripts/config --file out/.config \
-            --set-str LOCALVERSION $VERSION \
-            -e LOCALVERSION_AUTO
+          #echo "修改内核版本号..."
+          #scripts/config --file out/.config \
+          #  --set-str LOCALVERSION $VERSION \
+          #  -e LOCALVERSION_AUTO
           
           sed -i "s/-dirty/-Yun/g" scripts/setlocalversion
 
