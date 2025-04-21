@@ -347,19 +347,21 @@ jobs:
                   -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
                   -e KSU_SUSFS_OPEN_REDIRECT \
                   -d KSU_SUSFS_SUS_SU
-
-                  
           elif [ "$KSU" == "KernelSU" ]; then
               echo "应用 KernelSU 配置..."
-              scripts/config --file out/.config -e KSU
+              scripts/config --file out/.config \
+               -e KSU
           fi
 
           # 判断KPM是否启用并开启相关配置
           if [ "$KSU" == "SukiSU=Ultra" ] && [ "$KPM" == "true" ]; then
-              scripts/config --file out/.config -e KPM
+              echo "开启 KPM 配置..."
+              scripts/config --file out/.config \
+              -e KPM
           fi
 
           # 修改内核版本号
+          echo "修改内核版本号..."
           scripts/config --file out/.config \
             --set-str LOCALVERSION $VERSION \
             -e LOCALVERSION_AUTO
