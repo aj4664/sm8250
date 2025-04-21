@@ -200,7 +200,7 @@ jobs:
             -e KPROBES \
             -e HAVE_KPROBES \
             -e KPROBE_EVENTS \
-            -e TMPFS_XATTR=y
+            -e TMPFS_XATTR=y \
             -e TMPFS_POSIX_ACL \
             -e IP_NF_TARGET_TTL \
             -e IP6_NF_TARGET_HL \
