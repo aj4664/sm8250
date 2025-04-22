@@ -550,8 +550,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/release/*.zip
-        name: Kernel_${{ env.TARGET_DEVICES }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}_${{ github.event.inputs.build_type }}
-        tag_name: Kernel_${{ env.TARGET_DEVICES }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}
+        name: Kernel_【${{ env.TARGET_DEVICES }}】_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}_${{ github.event.inputs.build_type }}
+        tag_name: Kernel_【${{ env.TARGET_DEVICES }}】_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}
         body: |
           ## 📱kernel build information | 内核构建信息
       
