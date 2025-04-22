@@ -430,7 +430,6 @@ jobs:
             fi
 
             sed -i "s/echo \"\$res\"/echo \"${custom_part}\"/g" "$KERNEL_SOURCE/scripts/setlocalversion"
-            echo "已将内核版本设置为: ${FULL_VERSION}"
           fi
             
           # 开始构建
