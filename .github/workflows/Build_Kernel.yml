@@ -75,7 +75,7 @@ jobs:
         run: |
           DEVICES="${{ github.event.inputs.target_devices }}"
           if [ "$DEVICES" == "all" ]; then
-            DEVICES="umi,cmi,cas,thyme,munch,dagu,elish,enuma,alioth,apollo,psyche,pipa"
+            DEVICES="umi,cmi,cas,thyme,munch,dagu,elish,enuma,alioth,apollo,lmi,psyche,pipa"
           fi
           DEVICES_JSON="[$(echo $DEVICES | sed 's/,/","/g' | sed 's/.*/"&"/')]"
           echo "matrix={\"device\":$DEVICES_JSON}" >> $GITHUB_OUTPUT
