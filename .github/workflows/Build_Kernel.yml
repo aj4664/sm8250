@@ -75,7 +75,7 @@ jobs:
         run: |
           DEVICES="${{ github.event.inputs.target_devices }}"
           if [ "$DEVICES" == "all" ]; then
-            DEVICES="umi,cmi,cas,thyme,munch,dagu,elish,enuma,alioth,apollo,lmi,psyche,pipa"
+            DEVICES="umi,cmi,cas,thyme,munch,dagu,elish,enuma,alioth,apollo,psyche,pipa"
           fi
           DEVICES_JSON="[$(echo $DEVICES | sed 's/,/","/g' | sed 's/.*/"&"/')]"
           echo "matrix={\"device\":$DEVICES_JSON}" >> $GITHUB_OUTPUT
@@ -507,10 +507,7 @@ jobs:
       - name: 📤 Upload compilation results (上传编译结果)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.BUILD_DATE }}_${{ env.GIT_COMMIT_ID }}_${{ github.event.inputs.build_type }}
-          path: |
-            ${{ github.workspace }}/ak3_out/*.zip
-            ${{ env.KERNEL_SOURCE }}/out/arch/arm64/boot/Image
+          path: ${{ github.workspace }}/ak3_out/*.zip
 
   release:
     needs: build
@@ -518,60 +515,58 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: 📥 Download all builds (下载所有构建结果)
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+    - name: 📥 Download all zip artifacts (下载所有 zip 构建产物)
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: 📝 Preparing files for release (准备发布文件)
+      run: |
+        mkdir -p release_files
+        find artifacts -name "*.zip" -exec cp {} release_files/ \;
+        ls -la release_files
+
+    - name: Check if release files exist (检查发布文件是否存在)
+      run: |
+        if [ -z "$(ls -A release_files/*.zip 2>/dev/null)" ]; then
+          echo "No release files found. Exiting."
+          exit 1
+        fi
+
+    - name: 📅 Setting date variables (设置日期变量)
+      run: echo "RELEASE_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
           
-      - name: 📝 Preparing files for release (准备发布文件)
-        run: |
-          mkdir -p release_files
-          find artifacts -name "*.zip" -exec cp {} release_files/ \;
-          find artifacts -name "Image" -exec cp {} release_files/ \;
+    - name: 📤 Post to Release (发布到 Release)
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release_files/*.zip
+        name: Kernel_${{ matrix.device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.BUILD_DATE }}_${{ env.GIT_COMMIT_ID }}_${{ github.event.inputs.build_type }}
+        tag_name: Kernel_${{ matrix.device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.BUILD_DATE }}_${{ env.GIT_COMMIT_ID }}
+        body: |
+          ## 📱kernel build information | 内核构建信息
           
-          # 为每个Image文件添加设备标识
-          cd release_files
-          for img in $(find . -name "Image"); do
-            dir=$(dirname "$img")
-            base=$(basename "$dir")
-            device=$(echo "$base" | cut -d'_' -f1)
-            mv "$img" "./Image_${device}"
-          done
+          ### 🌐 英文 | English
+          - **Target Device:** ${{ matrix.device }}
+          - **Compiled System:** ${{ github.event.inputs.compiled_system }}
+          - **KernelSU Variant:** ${{ github.event.inputs.kernelsu_variant }}
+          - **KPM Support:** ${{ github.event.inputs.kpm_enable }}
+          - **Build Type:** ${{ github.event.inputs.build_type }}
+          - **Build Date:** ${{ env.BUILD_DATE }}
+          - **Commit ID:** ${{ env.GIT_COMMIT_ID }}
           
-          ls -la
+          ### 🇨🇳 中文 | Chinese
+          - **目标机型:** ${{ matrix.device }}
+          - **适用系统:** ${{ github.event.inputs.compiled_system }}
+          - **KernelSU变体:** ${{ github.event.inputs.kernelsu_variant }}
+          - **KPM支持:** ${{ github.event.inputs.kpm_enable }}
+          - **构建类型:** ${{ github.event.inputs.build_type }}
+          - **构建日期:** ${{ env.BUILD_DATE }}
+          - **提交ID:** ${{ env.GIT_COMMIT_ID }}
           
-      - name: 📅 Setting date variables (设置日期变量)
-        run: echo "RELEASE_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-          
-      - name: 📤 Post to Release (发布到 Release)
-        uses: softprops/action-gh-release@v1
-        with:
-          files: release_files/*
-          name: MultiDevice_Kernel_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}
-          tag_name: MultiDevice_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}
-          body: |
-            ## 📱Kernel Buildin
-            
-            ### 🌐 英文 | English
-            - **Target Devices:** ${{ github.event.inputs.target_devices }}
-            - **Compiled System:** ${{ github.event.inputs.compiled_system }}
-            - **KernelSU Variant:** ${{ github.event.inputs.kernelsu_variant }}
-            - **KPM Support:** ${{ github.event.inputs.kpm_enable }}
-            - **Build Type:** ${{ github.event.inputs.build_type }}
-            - **Build Date:** ${{ env.RELEASE_DATE }}
-            
-            ### 🇨🇳 中文 | Chinese
-            - **目标机型:** ${{ github.event.inputs.target_devices }}
-            - **适用系统:** ${{ github.event.inputs.compiled_system }}
-            - **KernelSU变体:** ${{ github.event.inputs.kernelsu_variant }}
-            - **KPM支持:** ${{ github.event.inputs.kpm_enable }}
-            - **构建类型:** ${{ github.event.inputs.build_type }}
-            - **构建日期:** ${{ env.RELEASE_DATE }}
-            
-            ### 📋 安装说明 | Installation Guide
-            1. 下载对应机型的刷机包
-            2. 进入Recovery模式
-            3. 通过Recovery刷入刷机包
-            4. 重启设备
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ### 📋 安装说明 | Installation Guide
+          1. 下载对应机型的刷机包
+          2. 进入Recovery模式
+          3. 通过Recovery刷入刷机包
+          4. 重启设备
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
