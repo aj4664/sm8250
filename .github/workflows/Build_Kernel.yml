@@ -482,7 +482,7 @@ jobs:
           # 创建目录并克隆 AnyKernel3
           mkdir -p "$WORKDIR/ak3_out"
           cd "$WORKDIR/ak3_out"
-          git clone https://github.com/osm0sis/AnyKernel3.git --depth=1
+          git clone https://github.com/liyafe1997/AnyKernel3.git --depth=1
           cd AnyKernel3
           
           # 删除不需要的文件
