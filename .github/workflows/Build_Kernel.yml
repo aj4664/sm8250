@@ -538,7 +538,8 @@ jobs:
           done
           cd ..
         done
-        echo "TARGET_DEVICES=${device_list[*]}" >> $GITHUB_ENV
+        TARGET_DEVICES=$(echo "${device_list[*]}" | tr ' ' '_')
+        echo "TARGET_DEVICES=$TARGET_DEVICES" >> $GITHUB_ENV
 
     - name: 📅 Setting date variables (设置日期变量)
       run: |
@@ -553,7 +554,7 @@ jobs:
         tag_name: Kernel_${{ env.TARGET_DEVICES }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}
         body: |
           ## 📱kernel build information | 内核构建信息
-          
+      
           ### 🌐 英文 | English
           - **Target Device:** ${{ env.TARGET_DEVICES }}
           - **Compiled System:** ${{ github.event.inputs.compiled_system }}
@@ -562,7 +563,7 @@ jobs:
           - **Build Type:** ${{ github.event.inputs.build_type }}
           - **Build Date:** ${{ env.RELEASE_DATE }}
           - **Commit ID:** ${{ env.GIT_COMMIT_ID }}
-          
+      
           ### 🇨🇳 中文 | Chinese
           - **目标机型:** ${{ env.TARGET_DEVICES }}
           - **适用系统:** ${{ github.event.inputs.compiled_system }}
@@ -571,7 +572,7 @@ jobs:
           - **构建类型:** ${{ github.event.inputs.build_type }}
           - **构建日期:** ${{ env.RELEASE_DATE }}
           - **提交ID:** ${{ env.GIT_COMMIT_ID }}
-          
+      
           ### 📋 安装说明 | Installation Guide
           1. 下载对应机型的刷机包
           2. 进入Recovery模式
