@@ -507,6 +507,7 @@ jobs:
       - name: 📤 Upload compilation results (上传编译结果)
         uses: actions/upload-artifact@v4
         with:
+          name: Kernel-${{ matrix.device }}
           path: ${{ github.workspace }}/ak3_out/*.zip
 
   release:
@@ -518,20 +519,24 @@ jobs:
     - name: 📥 Download all zip artifacts (下载所有 zip 构建产物)
       uses: actions/download-artifact@v4
       with:
-        path: artifacts
+        path: out
 
     - name: 📝 Preparing files for release (准备发布文件)
       run: |
-        mkdir -p release_files
-        find artifacts -name "*.zip" -exec cp {} release_files/ \;
-        ls -la release_files
-
-    - name: Check if release files exist (检查发布文件是否存在)
-      run: |
-        if [ -z "$(ls -A release_files/*.zip 2>/dev/null)" ]; then
-          echo "No release files found. Exiting."
-          exit 1
-        fi
+        cd /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/out
+        mkdir -p release
+        for dir in */; do
+        cd "$dir"
+        for zip_file in *; do
+          if [[ -f "$zip_file" && "$zip_file" == *.zip ]]; then
+            unzip "$zip_file" -d ../../release
+            rm -rf "$zip_file"
+          fi
+        done
+        cd ..
+        done
+        # 列出 release 文件夹的内容
+        ls -la release
 
     - name: 📅 Setting date variables (设置日期变量)
       run: echo "RELEASE_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
@@ -539,7 +544,7 @@ jobs:
     - name: 📤 Post to Release (发布到 Release)
       uses: softprops/action-gh-release@v1
       with:
-        files: release_files/*.zip
+        files: ./release/*.zip
         name: Kernel_${{ matrix.device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.BUILD_DATE }}_${{ env.GIT_COMMIT_ID }}_${{ github.event.inputs.build_type }}
         tag_name: Kernel_${{ matrix.device }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.BUILD_DATE }}_${{ env.GIT_COMMIT_ID }}
         body: |
