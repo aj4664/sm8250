@@ -538,20 +538,22 @@ jobs:
           done
           cd ..
         done
-        TARGET_DEVICES=$(echo "${device_list[*]}" | tr ' ' '_')
+        TARGET_DEVICES=$(echo "${device_list[*]}" | tr ' ' '-')
         echo "TARGET_DEVICES=$TARGET_DEVICES" >> $GITHUB_ENV
 
     - name: 📅 Setting date variables (设置日期变量)
       run: |
         echo "RELEASE_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-        echo "GIT_COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        REPO_URL="https://github.com/yspbwx2010/kernel_xiaomi_sm8250_mod.git"
+        GIT_COMMIT_ID=$(git ls-remote $REPO_URL HEAD | cut -f1)
+        echo "GIT_COMMIT_ID=$GIT_COMMIT_ID" >> $GITHUB_ENV
           
     - name: 📤 Post to Release (发布到 Release)
       uses: softprops/action-gh-release@v1
       with:
         files: /home/runner/work/kernel_xiaomi_sm8250_mod/kernel_xiaomi_sm8250_mod/release/*.zip
-        name: Kernel_【${{ env.TARGET_DEVICES }}】_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}_${{ github.event.inputs.build_type }}
-        tag_name: Kernel_【${{ env.TARGET_DEVICES }}】_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}
+        name: Kernel_${{ env.TARGET_DEVICES }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}_${{ github.event.inputs.build_type }}
+        tag_name: Kernel_${{ env.TARGET_DEVICES }}_${{ github.event.inputs.kernelsu_variant }}_${{ github.event.inputs.compiled_system }}_${{ env.RELEASE_DATE }}_${{ env.GIT_COMMIT_ID }}
         body: |
           ## 📱kernel build information | 内核构建信息
       
