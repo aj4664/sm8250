@@ -332,16 +332,15 @@ jobs:
             -e CRYPTO_842 \
             -e CRYPTO_LZO \
             -e CRYPTO_DEFLATE \
-            --set-str ZRAM_DEF_COMP lz4kd \
             -e ZRAM_DEF_COMP_LZ4KD \
             -e SWAP \
             -e ZSWAP \
             -e ANDROID_SIMPLE_LMK \
             -e CPU_FREQ_GOV_SCHEDHORIZON \
             -e CPU_FREQ_DEFAULT_GOV_SCHEDHORIZON \
-            --set-str LITTLE_CPU_MASK 15 \
-            --set-str BIG_CPU_MASK 112 \
-            --set-str PRIME_CPU_MASK 128 \
+            --set-val LITTLE_CPU_MASK 15 \
+            --set-val BIG_CPU_MASK 112 \
+            --set-val PRIME_CPU_MASK 128 \
             -e LRU_GEN \
             -e LRU_GEN_ENABLED
             
