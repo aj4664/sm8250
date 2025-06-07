@@ -12399,9 +12399,9 @@ void unregister_fair_sched_group(struct task_group *tg)
 		 * check on_list without danger of it being re-added.
 		 */
 		if (cfs_rq->on_list) {
-			raw_spin_lock_irqsave(rq, flags);
+			raw_spin_rq_lock_irqsave(rq, flags);
 			list_del_leaf_cfs_rq(cfs_rq);
-			raw_spin_unlock_irqrestore(rq, flags);
+			raw_spin_rq_unlock_irqrestore(rq, flags);
 		}
 	}
 }
@@ -12522,7 +12522,7 @@ int sched_group_set_idle(struct task_group *tg, long idle)
 		if (WARN_ON_ONCE(was_idle == cfs_rq_is_idle(grp_cfs_rq)))
 			goto next_cpu;
 
-		idle_task_delta = grp_cfs_rq->h_nr_running -
+		idle_task_delta = grp_cfs_rq->h_nr_queued -
 				  grp_cfs_rq->idle_h_nr_running;
 		if (!cfs_rq_is_idle(grp_cfs_rq))
 			idle_task_delta *= -1;
