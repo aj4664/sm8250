@@ -47,6 +47,8 @@ extern void rcuwait_wake_up(struct rcuwait *w);
  */
 #define rcuwait_wait_event(w, condition, state)				\
 ({									\
+	int __ret = 0;							\
+									\
 	/*								\
 	 * Complain if we are called after do_exit()/exit_notify(),     \
 	 * as we cannot rely on the rcu critical region for the		\
@@ -54,7 +56,6 @@ extern void rcuwait_wake_up(struct rcuwait *w);
 	 */                                                             \
 	WARN_ON(current->exit_state);                                   \
 									\
-	int __ret = 0;							\
 	rcu_assign_pointer((w)->task, current);				\
 	for (;;) {							\
 		/*							\
