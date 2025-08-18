@@ -36,7 +36,7 @@ check_and_clone() {
 
     if [ ! -d $dir ]; then
         echo Папка $dir не существует. Клонирование $repo
-        cd $dir
+        cd $MAIN
         git clone $repo $name
     fi
 }
@@ -60,7 +60,7 @@ build() {
     git log $LAST..HEAD > ../changelog.txt
     BRANCH=$(git branch --show-current)
 
-    MAGICTIME=$KERNEL/MagicTime-$DEVICE
+    MAGICTIME=$MAIN/MagicTime-$DEVICE
 
     if [ ! -d $MAGICTIME ]; then
         mkdir -p $MAGICTIME
