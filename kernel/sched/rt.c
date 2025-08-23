@@ -1620,7 +1620,7 @@ select_task_rq_rt(struct task_struct *p, int cpu, int flags)
 		goto out_unlock;
 	}
 
-	if (test || !rt_task_fits_capacity(p, cpu)) {
+	if (may_not_preempt || test || !rt_task_fits_capacity(p, cpu)) {
 		int target = find_lowest_rq(p);
 
 		/*
