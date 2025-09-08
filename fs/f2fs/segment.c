@@ -2534,15 +2534,9 @@ got_it:
 	f2fs_bug_on(sbi, test_bit(segno, free_i->free_segmap));
 	__set_inuse(sbi, segno);
 	*newseg = segno;
-out_unlock:
 	spin_unlock(&free_i->segmap_lock);
-
-	if (ret) {
-		f2fs_stop_checkpoint(sbi, false);
-		f2fs_bug_on(sbi, 1);
-	}
-	return ret;
 }
+
 
 static void reset_curseg(struct f2fs_sb_info *sbi, int type, int modified)
 {
