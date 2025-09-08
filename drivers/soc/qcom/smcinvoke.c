@@ -568,10 +568,10 @@ static inline size_t smci_size_add(size_t a, size_t b)
 }
 
 /*
- * pad_size is used along with smci_size_align to define a buffer overflow
+ * smci_pad_size is used along with smci_size_align to define a buffer overflow
  * protected version of ALIGN
  */
-static inline size_t pad_size(size_t a, size_t b)
+static inline size_t smci_pad_size(size_t a, size_t b)
 {
 	return (~a + 1) % b;
 }
