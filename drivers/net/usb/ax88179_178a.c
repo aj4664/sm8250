@@ -1146,7 +1146,6 @@ static int ax88179_system_resume(struct ax_device *axdev)
 {
 	u16 reg16;
 	u8 reg8;
-
 	reg16 = 0;
 	ax_write_cmd_nopm(axdev, AX_ACCESS_MAC, AX_PHYPWR_RSTCTL, 2, 2, &reg16);
 #if KERNEL_VERSION(2, 6, 36) <= LINUX_VERSION_CODE
