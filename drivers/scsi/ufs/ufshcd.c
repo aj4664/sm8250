@@ -974,17 +974,7 @@ static void ufshcd_print_tmrs(struct ufs_hba *hba, unsigned long bitmap)
 		struct utp_task_req_desc *tmrdp = &hba->utmrdl_base_addr[tag];
 
 		dev_err(hba->dev, "TM[%d] - Task Management Header\n", tag);
-		ufshcd_hex_dump(hba, "TM TRD", &tmrdp->header,
-				sizeof(struct request_desc_header));
-		dev_err(hba->dev, "TM[%d] - Task Management Request UPIU\n",
-				tag);
-		ufshcd_hex_dump(hba, "TM REQ", tmrdp->task_req_upiu,
-				sizeof(struct utp_upiu_req));
-		dev_err(hba->dev, "TM[%d] - Task Management Response UPIU\n",
-				tag);
-		ufshcd_hex_dump(hba, "TM RSP", tmrdp->task_rsp_upiu,
-				sizeof(struct utp_task_req_desc));
-		ufshcd_hex_dump("", tmrdp, sizeof(*tmrdp));
+		ufshcd_hex_dump(hba, "", tmrdp, sizeof(*tmrdp));
 	}
 }
 
@@ -7837,22 +7827,7 @@ static int __ufshcd_issue_tm_cmd(struct ufs_hba *hba,
 	hba->ufs_stats.clk_hold.ctx = TM_CMD_SEND;
 	ufshcd_hold_all(hba);
 
-<<<<<<< HEAD
-	ufs_spin_lock_irqsave(host->host_lock, flags);
-	task_req_descp = hba->utmrdl_base_addr;
-	task_req_descp += free_slot;
-
-	/* Configure task request descriptor */
-	task_req_descp->header.dword_0 = cpu_to_le32(UTP_REQ_DESC_INT_CMD);
-	task_req_descp->header.dword_2 =
-			cpu_to_le32(OCS_INVALID_COMMAND_STATUS);
-
-	/* Configure task request UPIU */
-	task_req_upiup =
-		(struct utp_upiu_task_req *) task_req_descp->task_req_upiu;
-=======
 	spin_lock_irqsave(host->host_lock, flags);
->>>>>>> ASB-2024-07-05_4.19-stable
 	task_tag = hba->nutrs + free_slot;
 
 	treq->req_header.dword_0 |= cpu_to_be32(task_tag);
