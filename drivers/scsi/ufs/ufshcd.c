@@ -5064,9 +5064,10 @@ static inline void ufshcd_add_delay_before_dme_cmd(struct ufs_hba *hba)
 			min_sleep_time_us =
 				MIN_DELAY_BEFORE_DME_CMDS_US - delta;
 		else
-			return; /* no more delay required */
+			min_sleep_time_us = 0; /* no more delay required */
 	}
 
+<<<<<<< HEAD
 	/* allow sleep for extra 50us if needed */
 	if (!oops_in_progress)
 		usleep_range(min_sleep_time_us, min_sleep_time_us + 50);
@@ -5079,6 +5080,15 @@ static inline void ufshcd_save_tstamp_of_last_dme_cmd(
 {
 	if (hba->quirks & UFSHCD_QUIRK_DELAY_BEFORE_DME_CMDS)
 		hba->last_dme_cmd_tstamp = ktime_get();
+=======
+	if (min_sleep_time_us > 0) {
+		/* allow sleep for extra 50us if needed */
+		usleep_range(min_sleep_time_us, min_sleep_time_us + 50);
+	}
+
+	/* update the last_dme_cmd_tstamp */
+	hba->last_dme_cmd_tstamp = ktime_get();
+>>>>>>> ASB-2024-09-05_4.19-stable
 }
 
 /**
