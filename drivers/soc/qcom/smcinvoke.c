@@ -568,7 +568,7 @@ static inline size_t smci_size_add(size_t a, size_t b)
 }
 
 /*
- * pad_size is used along with size_align to define a buffer overflow
+ * pad_size is used along with smci_size_align to define a buffer overflow
  * protected version of ALIGN
  */
 static inline size_t pad_size(size_t a, size_t b)
@@ -1246,7 +1246,7 @@ static int marshal_in_invoke_req(const struct smcinvoke_cmd_req *req,
 		return 0;
 
 	FOR_ARGS(i, req->counts, BI) {
-		offset = size_align(offset, SMCINVOKE_ARGS_ALIGN_SIZE);
+		offset = smci_size_align(offset, SMCINVOKE_ARGS_ALIGN_SIZE);
 		if ((offset > buf_size) ||
 			(args_buf[i].b.size > (buf_size - offset)))
 			goto out;
@@ -1262,7 +1262,7 @@ static int marshal_in_invoke_req(const struct smcinvoke_cmd_req *req,
 		offset += args_buf[i].b.size;
 	}
 	FOR_ARGS(i, req->counts, BO) {
-		offset = size_align(offset, SMCINVOKE_ARGS_ALIGN_SIZE);
+		offset = smci_size_align(offset, SMCINVOKE_ARGS_ALIGN_SIZE);
 		if ((offset > buf_size) ||
 			(args_buf[i].b.size > (buf_size - offset)))
 			goto out;
@@ -1313,7 +1313,7 @@ static int marshal_in_tzcb_req(const struct smcinvoke_cb_txn *cb_txn,
 	user_req->argsize = sizeof(union smcinvoke_arg);
 
 	FOR_ARGS(i, tzcb_req->hdr.counts, BI) {
-		user_req_buf_offset = size_align(user_req_buf_offset,
+		user_req_buf_offset = smci_size_align(user_req_buf_offset,
 					 SMCINVOKE_ARGS_ALIGN_SIZE);
 		tmp_arg.b.size = tz_args[i].b.size;
 		if ((tz_args[i].b.offset > tzcb_req_len) ||
@@ -1339,7 +1339,7 @@ static int marshal_in_tzcb_req(const struct smcinvoke_cb_txn *cb_txn,
 		user_req_buf_offset += tmp_arg.b.size;
 	}
 	FOR_ARGS(i, tzcb_req->hdr.counts, BO) {
-		user_req_buf_offset = size_align(user_req_buf_offset,
+		user_req_buf_offset = smci_size_align(user_req_buf_offset,
 					SMCINVOKE_ARGS_ALIGN_SIZE);
 
 		tmp_arg.b.size = tz_args[i].b.size;
