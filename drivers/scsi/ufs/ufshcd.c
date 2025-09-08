@@ -974,7 +974,6 @@ static void ufshcd_print_tmrs(struct ufs_hba *hba, unsigned long bitmap)
 		struct utp_task_req_desc *tmrdp = &hba->utmrdl_base_addr[tag];
 
 		dev_err(hba->dev, "TM[%d] - Task Management Header\n", tag);
-<<<<<<< HEAD
 		ufshcd_hex_dump(hba, "TM TRD", &tmrdp->header,
 				sizeof(struct request_desc_header));
 		dev_err(hba->dev, "TM[%d] - Task Management Request UPIU\n",
@@ -985,9 +984,7 @@ static void ufshcd_print_tmrs(struct ufs_hba *hba, unsigned long bitmap)
 				tag);
 		ufshcd_hex_dump(hba, "TM RSP", tmrdp->task_rsp_upiu,
 				sizeof(struct utp_task_req_desc));
-=======
 		ufshcd_hex_dump("", tmrdp, sizeof(*tmrdp));
->>>>>>> ASB-2024-07-05_4.19-stable
 	}
 }
 
@@ -5064,21 +5061,16 @@ static inline void ufshcd_add_delay_before_dme_cmd(struct ufs_hba *hba)
 			min_sleep_time_us =
 				MIN_DELAY_BEFORE_DME_CMDS_US - delta;
 		else
-			return; /* no more delay required */
+			min_sleep_time_us = 0; /* no more delay required */
 	}
 
-	/* allow sleep for extra 50us if needed */
-	if (!oops_in_progress)
+	if (min_sleep_time_us > 0) {
+		/* allow sleep for extra 50us if needed */
 		usleep_range(min_sleep_time_us, min_sleep_time_us + 50);
-	else
-		udelay(min_sleep_time_us);
-}
+	}
 
-static inline void ufshcd_save_tstamp_of_last_dme_cmd(
-			struct ufs_hba *hba)
-{
-	if (hba->quirks & UFSHCD_QUIRK_DELAY_BEFORE_DME_CMDS)
-		hba->last_dme_cmd_tstamp = ktime_get();
+	/* update the last_dme_cmd_tstamp */
+	hba->last_dme_cmd_tstamp = ktime_get();
 }
 
 /**
@@ -6346,49 +6338,6 @@ static void ufshcd_slave_destroy(struct scsi_device *sdev)
 }
 
 /**
-<<<<<<< HEAD
- * ufshcd_task_req_compl - handle task management request completion
- * @hba: per adapter instance
- * @index: index of the completed request
- * @resp: task management service response
- *
- * Returns non-zero value on error, zero on success
- */
-static int ufshcd_task_req_compl(struct ufs_hba *hba, u32 index, u8 *resp)
-{
-	struct utp_task_req_desc *task_req_descp;
-	struct utp_upiu_task_rsp *task_rsp_upiup;
-	unsigned long flags;
-	int ocs_value;
-	int task_result;
-
-	ufs_spin_lock_irqsave(hba->host->host_lock, flags);
-
-	/* Clear completed tasks from outstanding_tasks */
-	__clear_bit(index, &hba->outstanding_tasks);
-
-	task_req_descp = hba->utmrdl_base_addr;
-	ocs_value = ufshcd_get_tmr_ocs(&task_req_descp[index]);
-
-	if (ocs_value == OCS_SUCCESS) {
-		task_rsp_upiup = (struct utp_upiu_task_rsp *)
-				task_req_descp[index].task_rsp_upiu;
-		task_result = be32_to_cpu(task_rsp_upiup->output_param1);
-		task_result = task_result & MASK_TM_SERVICE_RESP;
-		if (resp)
-			*resp = (u8)task_result;
-	} else {
-		dev_err(hba->dev, "%s: failed, ocs = 0x%x\n",
-				__func__, ocs_value);
-	}
-	ufs_spin_unlock_irqrestore(hba->host->host_lock, flags);
-
-	return ocs_value;
-}
-
-/**
-=======
->>>>>>> ASB-2024-07-05_4.19-stable
  * ufshcd_scsi_cmd_status - Update SCSI command result based on SCSI status
  * @lrbp: pointer to local reference block of completed command
  * @scsi_status: SCSI command status
