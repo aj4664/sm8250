@@ -137,7 +137,6 @@
 #define DWC3_GEVNTCOUNT(n)	(0xc40c + ((n) * 0x10))
 
 #define DWC3_GHWPARAMS8		0xc600
-#define DWC3_GUCTL3		0xc60c
 #define DWC3_GFLADJ		0xc630
 
 /* Device Registers */
@@ -1334,8 +1333,6 @@ struct dwc3 {
 	unsigned int		vbus_draw;
 
 	unsigned		dis_metastability_quirk:1;
-
-	unsigned		dis_split_quirk:1;
 
 	u16			imod_interval;
 	u32			xhci_imod_value;

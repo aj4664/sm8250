@@ -420,7 +420,7 @@ int dwc3_event_buffers_setup(struct dwc3 *dwc)
 	/* Clear any stale event */
 	reg = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(0));
 	dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(0), reg);
-	
+
 	/* setup GSI related event buffers */
 	dwc3_notify_event(dwc, DWC3_GSI_EVT_BUF_SETUP, 0);
 	return 0;
@@ -450,10 +450,10 @@ void dwc3_event_buffers_cleanup(struct dwc3 *dwc)
 	dwc3_writel(dwc->regs, DWC3_GEVNTSIZ(0), DWC3_GEVNTSIZ_INTMASK
 			| DWC3_GEVNTSIZ_SIZE(0));
 
-	/* cleanup GSI related event buffers */
+	/* Clear any stale event */
 	reg = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(0));
 	dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(0), reg);
-	
+
 	/* cleanup GSI related event buffers */
 	dwc3_notify_event(dwc, DWC3_GSI_EVT_BUF_CLEANUP, 0);
 }
@@ -1043,6 +1043,7 @@ int dwc3_core_init(struct dwc3 *dwc)
 		 */
 		if (!dwc3_is_usb31(dwc)) {
 			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_SS;
+			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_HS;
 			reg |= DWC3_GUCTL1_PARKMODE_DISABLE_FSLS;
 		}
 
@@ -1968,26 +1969,10 @@ runtime_set_active:
 
 	return 0;
 }
-
-static void dwc3_complete(struct device *dev)
-{
-	struct dwc3	*dwc = dev_get_drvdata(dev);
-	u32		reg;
-
-	if (dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST &&
-			dwc->dis_split_quirk) {
-		reg = dwc3_readl(dwc->regs, DWC3_GUCTL3);
-		reg |= DWC3_GUCTL3_USB20_RETRY_DISABLE;
-		dwc3_writel(dwc->regs, DWC3_GUCTL3, reg);
-	}
-}
-#else
-#define dwc3_complete NULL
 #endif /* CONFIG_PM_SLEEP */
 
 static const struct dev_pm_ops dwc3_dev_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(dwc3_suspend, dwc3_resume)
-	.complete = dwc3_complete,
 
 	/*
 	 * Runtime suspend halts the controller on disconnection. It relies on
