@@ -205,7 +205,7 @@ scripts/config --file out/.config \
   -e BOOTUP_RECLAIM \
   -e MI_RECLAIM \
   -e RTMM \
-  -e KSU \
+  -d KSU \
   -e KALLSYMS \
   -e KALLSYMS_ALL \
   -e KPROBES \
