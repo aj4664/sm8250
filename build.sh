@@ -74,7 +74,7 @@ clang --version
 KSU_ZIP_STR=NoKernelSU
 if [ "$2" == "ksu" ]; then
     KSU_ENABLE=1
-    KSU_ZIP_STR=KernelSU
+    KSU_ZIP_STR=SukiSU-SUSFS
 else
     KSU_ENABLE=0
 fi
@@ -84,7 +84,7 @@ echo "TARGET_DEVICE: $TARGET_DEVICE"
 
 if [ $KSU_ENABLE -eq 1 ]; then
     echo "KSU is enabled"
-    curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
+    curl -LSs "https://github.com/liyafe1997/SukiSU-Ultra/raw/4ff14cf0051d04209c4abd5027d99d8e7780ef5b/kernel/setup.sh" | bash -s f4863b20cc8dc0f8cc67418980f022e43014b598
 else
     echo "KSU is disabled"
 fi
@@ -105,6 +105,7 @@ local_version_date_str="-$(date +%Y%m%d)-${GIT_COMMIT_ID}-perf"
 sed -i "s/${local_version_str}/${local_version_date_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
 
 # ------------- Building for AOSP -------------
+
 
 # ------------- End of Building for AOSP -------------
 #  If you don't need AOSP you can comment out the above block [Building for AOSP]
@@ -177,135 +178,159 @@ sed -i 's/\/\/39 01 00 00 11 00 03 51 03 FF/39 01 00 00 11 00 03 51 03 FF/g' ${d
 
 make $MAKE_ARGS ${TARGET_DEVICE}_defconfig
 
+if [ $KSU_ENABLE -eq 1 ]; then
+    scripts/config --file out/.config \
+    -e KSU \
+    -e KSU_MANUAL_HOOK \
+    -e KSU_SUSFS_HAS_MAGIC_MOUNT \
+    -d KSU_SUSFS_SUS_PATH \
+    -e KSU_SUSFS_SUS_MOUNT \
+    -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
+    -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
+    -e KSU_SUSFS_SUS_KSTAT \
+    -d KSU_SUSFS_SUS_OVERLAYFS \
+    -e KSU_SUSFS_TRY_UMOUNT \
+    -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT \
+    -e KSU_SUSFS_SPOOF_UNAME \
+    -e KSU_SUSFS_ENABLE_LOG \
+    -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
+    -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
+    -d KSU_SUSFS_OPEN_REDIRECT \
+    -d KSU_SUSFS_SUS_SU \
+    -e KPM
+else
+    scripts/config --file out/.config -d KSU
+fi
+
+
 scripts/config --file out/.config \
---set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
-  -e PERF_CRITICAL_RT_TASK \
-  -e SF_BINDER \
-  -e OVERLAY_FS \
-  -d DEBUG_FS \
-  -e MIGT \
-  -e MIGT_ENERGY_MODEL \
-  -e MIHW \
-  -e PACKAGE_RUNTIME_INFO \
-  -e BINDER_OPT \
-  -e KPERFEVENTS \
-  -e MILLET \
-  -e PERF_HUMANTASK \
-  -d LTO_CLANG \
-  -d LOCALVERSION_AUTO \
-  -e SF_BINDER \
-  -e XIAOMI_MIUI \
-  -d MI_MEMORY_SYSFS \
-  -e TASK_DELAY_ACCT \
-  -e MIUI_ZRAM_MEMORY_TRACKING \
-  -d CONFIG_MODULE_SIG_SHA512 \
-  -d CONFIG_MODULE_SIG_HASH \
-  -e MI_FRAGMENTION \
-  -e PERF_HELPER \
-  -e BOOTUP_RECLAIM \
-  -e MI_RECLAIM \
-  -e RTMM \
-  -d KSU \
-  -e KALLSYMS \
-  -e KALLSYMS_ALL \
-  -e KPROBES \
-  -e HAVE_KPROBES \
-  -e KPROBE_EVENTS \
-  -e TMPFS_XATTR=y \
-  -e TMPFS_POSIX_ACL \
-  -e IP_NF_TARGET_TTL \
-  -e IP6_NF_TARGET_HL \
-  -e IP6_NF_MATCH_HL \
-  -e UCLAMP_TASK \
-  -e TCP_CONG_ADVANCED \
-  -e TCP_CONG_BIC \
-  -e TCP_CONG_CUBIC \
-  -e TCP_CONG_WESTWOOD \
-  -e TCP_CONG_HTCP \
-  -e TCP_CONG_HSTCP \
-  -e TCP_CONG_HYBLA \
-  -e TCP_CONG_VEGAS \
-  -e TCP_CONG_NV \
-  -e TCP_CONG_SCALABLE \
-  -e TCP_CONG_LP \
-  -e TCP_CONG_VENO \
-  -e TCP_CONG_YEAH \
-  -e TCP_CONG_ILLINOIS \
-  -e TCP_CONG_DCTCP \
-  -e TCP_CONG_CDG \
-  -e TCP_CONG_BBR \
-  -e DEFAULT_BBR \
-  -e NET_SCHED \
-  -e NET_SCH_HTB \
-  -e NET_SCH_HFSC \
-  -e NET_SCH_PRIO \
-  -e NET_SCH_MULTIQ \
-  -e NET_SCH_RED \
-  -e NET_SCH_SFB \
-  -e NET_SCH_SFQ \
-  -e NET_SCH_TEQL \
-  -e NET_SCH_TBF \
-  -e NET_SCH_CBS \
-  -e NET_SCH_ETF \
-  -e NET_SCH_TAPRIO \
-  -e NET_SCH_GRED \
-  -e NET_SCH_NETEM \
-  -e NET_SCH_DRR \
-  -e NET_SCH_MQPRIO \
-  -e NET_SCH_SKBPRIO \
-  -e NET_SCH_CHOKE \
-  -e NET_SCH_QFQ \
-  -e NET_SCH_CODEL \
-  -e NET_SCH_FQ_CODEL \
-  -e NET_SCH_CAKE \
-  -e NET_SCH_FQ \
-  -e NET_SCH_HHF \
-  -e NET_SCH_PIE \
-  -e NET_SCH_FQ_PIE \
-  -e NET_SCH_INGRESS \
-  -e NET_SCH_PLUG \
-  -e NET_SCH_ETS \
-  -e NET_SCH_FIFO \
-  -e NET_SCH_DEFAULT \
-  -e DEFAULT_FQ \
-  -e MQ_IOSCHED_DEADLINE \
-  -e MQ_IOSCHED_KYBER \
-  -e IOSCHED_BFQ \
-  -e BFQ_GROUP_IOSCHED \
-  -e ENERGY_MODEL \
-  -e CPU_IDLE \
-  -e CPU_IDLE_GOV_MENU \
-  -e CPU_IDLE_GOV_TEO \
-  -e ARM_PSCI_CPUIDLE \
-  -e CPU_FREQ \
-  -e CPU_FREQ_STAT \
-  -e CPU_FREQ_TIMES \
-  -e CPU_FREQ_GOV_POWERSAVE \
-  -e CPU_FREQ_GOV_CONSERVATIVE \
-  -e CPU_FREQ_GOV_USERSPACE \
-  -e CPU_FREQ_GOV_ONDEMAND \
-  -e ZRAM \
-  -e ZSMALLOC \
-  -e ZRAM_WRITEBACK \
-  -e CRYPTO_LZ4 \
-  -e CRYPTO_LZ4HC \
-  -e CRYPTO_LZ4K \
-  -e CRYPTO_LZ4KD \
-  -e CRYPTO_ZSTD \
-  -e CRYPTO_842 \
-  -e CRYPTO_LZO \
-  -e CRYPTO_DEFLATE \
-  -e ZRAM_DEF_COMP_LZ4KD \
-  -e SWAP \
-  -e ZSWAP \
-  -e ANDROID_SIMPLE_LMK \
-  -e CPU_FREQ_GOV_SCHEDHORIZON \
-  -e CPU_FREQ_DEFAULT_GOV_SCHEDHORIZON \
-  --set-val LITTLE_CPU_MASK 15 \
-  --set-val BIG_CPU_MASK 112 \
-  --set-val PRIME_CPU_MASK 128 \
-  -e LRU_GEN \
-  -e LRU_GEN_ENABLED
+    --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
+    -e PERF_CRITICAL_RT_TASK \
+    -e SF_BINDER \
+    -e OVERLAY_FS \
+    -d DEBUG_FS \
+    -e MIGT \
+    -e MIGT_ENERGY_MODEL \
+    -e MIHW \
+    -e PACKAGE_RUNTIME_INFO \
+    -e BINDER_OPT \
+    -e KPERFEVENTS \
+    -e MILLET \
+    -e PERF_HUMANTASK \
+    -d LTO_CLANG \
+    -d LOCALVERSION_AUTO \
+    -e SF_BINDER \
+    -e XIAOMI_MIUI \
+    -d MI_MEMORY_SYSFS \
+    -e TASK_DELAY_ACCT \
+    -e MIUI_ZRAM_MEMORY_TRACKING \
+    -d CONFIG_MODULE_SIG_SHA512 \
+    -d CONFIG_MODULE_SIG_HASH \
+    -e MI_FRAGMENTION \
+    -e PERF_HELPER \
+    -e BOOTUP_RECLAIM \
+    -e MI_RECLAIM \
+    -e RTMM \
+    -e KALLSYMS \
+    -e KALLSYMS_ALL \
+    -e KPROBES \
+    -e HAVE_KPROBES \
+    -e KPROBE_EVENTS \
+    -e TMPFS_XATTR=y \
+    -e TMPFS_POSIX_ACL \
+    -e IP_NF_TARGET_TTL \
+    -e IP6_NF_TARGET_HL \
+    -e IP6_NF_MATCH_HL \
+    -e UCLAMP_TASK \
+    -e TCP_CONG_ADVANCED \
+    -e TCP_CONG_BIC \
+    -e TCP_CONG_CUBIC \
+    -e TCP_CONG_WESTWOOD \
+    -e TCP_CONG_HTCP \
+    -e TCP_CONG_HSTCP \
+    -e TCP_CONG_HYBLA \
+    -e TCP_CONG_VEGAS \
+    -e TCP_CONG_NV \
+    -e TCP_CONG_SCALABLE \
+    -e TCP_CONG_LP \
+    -e TCP_CONG_VENO \
+    -e TCP_CONG_YEAH \
+    -e TCP_CONG_ILLINOIS \
+    -e TCP_CONG_DCTCP \
+    -e TCP_CONG_CDG \
+    -e TCP_CONG_BBR \
+    -e DEFAULT_BBR \
+    -e NET_SCHED \
+    -e NET_SCH_HTB \
+    -e NET_SCH_HFSC \
+    -e NET_SCH_PRIO \
+    -e NET_SCH_MULTIQ \
+    -e NET_SCH_RED \
+    -e NET_SCH_SFB \
+    -e NET_SCH_SFQ \
+    -e NET_SCH_TEQL \
+    -e NET_SCH_TBF \
+    -e NET_SCH_CBS \
+    -e NET_SCH_ETF \
+    -e NET_SCH_TAPRIO \
+    -e NET_SCH_GRED \
+    -e NET_SCH_NETEM \
+    -e NET_SCH_DRR \
+    -e NET_SCH_MQPRIO \
+    -e NET_SCH_SKBPRIO \
+    -e NET_SCH_CHOKE \
+    -e NET_SCH_QFQ \
+    -e NET_SCH_CODEL \
+    -e NET_SCH_FQ_CODEL \
+    -e NET_SCH_CAKE \
+    -e NET_SCH_FQ \
+    -e NET_SCH_HHF \
+    -e NET_SCH_PIE \
+    -e NET_SCH_FQ_PIE \
+    -e NET_SCH_INGRESS \
+    -e NET_SCH_PLUG \
+    -e NET_SCH_ETS \
+    -e NET_SCH_FIFO \
+    -e NET_SCH_DEFAULT \
+    -e DEFAULT_FQ \
+    -e MQ_IOSCHED_DEADLINE \
+    -e MQ_IOSCHED_KYBER \
+    -e IOSCHED_BFQ \
+    -e BFQ_GROUP_IOSCHED \
+    -e ENERGY_MODEL \
+    -e CPU_IDLE \
+    -e CPU_IDLE_GOV_MENU \
+    -e CPU_IDLE_GOV_TEO \
+    -e ARM_PSCI_CPUIDLE \
+    -e CPU_FREQ \
+    -e CPU_FREQ_STAT \
+    -e CPU_FREQ_TIMES \
+    -e CPU_FREQ_GOV_POWERSAVE \
+    -e CPU_FREQ_GOV_CONSERVATIVE \
+    -e CPU_FREQ_GOV_USERSPACE \
+    -e CPU_FREQ_GOV_ONDEMAND \
+    -e ZRAM \
+    -e ZSMALLOC \
+    -e ZRAM_WRITEBACK \
+    -e CRYPTO_LZ4 \
+    -e CRYPTO_LZ4HC \
+    -e CRYPTO_LZ4K \
+    -e CRYPTO_LZ4KD \
+    -e CRYPTO_ZSTD \
+    -e CRYPTO_842 \
+    -e CRYPTO_LZO \
+    -e CRYPTO_DEFLATE \
+    -e ZRAM_DEF_COMP_LZ4KD \
+    -e SWAP \
+    -e ZSWAP \
+    -e ANDROID_SIMPLE_LMK \
+    -e CPU_FREQ_GOV_SCHEDHORIZON \
+    -e CPU_FREQ_DEFAULT_GOV_SCHEDHORIZON \
+    --set-val LITTLE_CPU_MASK 15 \
+    --set-val BIG_CPU_MASK 112 \
+    --set-val PRIME_CPU_MASK 128 \
+    -e LRU_GEN \
+    -e LRU_GEN_ENABLED
 
 make $MAKE_ARGS -j$(nproc)
 
@@ -328,6 +353,17 @@ mv .dts.bak ${dts_source}
 
 rm -rf anykernel/kernels/
 mkdir -p anykernel/kernels/
+
+# Patch for SukiSU KPM support. 
+if [ $KSU_ENABLE -eq 1 ]; then
+    cd out/arch/arm64/boot/
+    wget https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
+    chmod +x patch_linux
+    ./patch_linux
+    rm Image
+    mv oImage Image
+    cd -
+fi
 
 cp out/arch/arm64/boot/Image anykernel/kernels/
 cp out/arch/arm64/boot/dtb anykernel/kernels/
