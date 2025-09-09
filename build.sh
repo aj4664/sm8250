@@ -205,6 +205,7 @@ fi
 
 scripts/config --file out/.config \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
+    -e DOCKER \
     -e PERF_CRITICAL_RT_TASK	\
     -e SF_BINDER		\
     -e OVERLAY_FS		\
@@ -273,10 +274,6 @@ echo "Build for MIUI finished."
 # Restore local version string
 sed -i "s/${local_version_date_str}/${local_version_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
 
-# ------------- End of Building for MIUI -------------
-#  If you don't need MIUI you can comment out the above block [Building for MIUI]
-
-
 cd anykernel 
 
 ZIP_FILENAME=Kernel_MIUI_${TARGET_DEVICE}_${KSU_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3_${GIT_COMMIT_ID}.zip
@@ -288,3 +285,48 @@ mv $ZIP_FILENAME ../
 cd ..
 
 echo "Done. The flashable zip is: [./$ZIP_FILENAME]"
+
+# 创建输出目录结构并复制文件
+OUTPUT_BASE_DIR="out123"
+DEVICE_DIR="${OUTPUT_BASE_DIR}/${TARGET_DEVICE}"
+
+if [ $KSU_ENABLE -eq 1 ]; then
+    # 如果是KSU版本，创建ksu子目录
+    OUTPUT_DIR="${DEVICE_DIR}/ksu"
+else
+    # 如果不是KSU版本，直接使用设备目录
+    OUTPUT_DIR="${DEVICE_DIR}"
+fi
+
+# 创建输出目录
+mkdir -p ${OUTPUT_DIR}
+
+# 复制文件
+echo "Copying output files to ${OUTPUT_DIR}..."
+cp out/.config ${OUTPUT_DIR}/ 2>/dev/null || echo "Warning: .config not found"
+cp -r out/arch/arm64/boot ${OUTPUT_DIR}/ 2>/dev/null || echo "Warning: boot directory not found"
+cp ./${ZIP_FILENAME} ${OUTPUT_DIR}/ 2>/dev/null || echo "Warning: zip file not found"
+
+echo "All output files have been copied to: ${OUTPUT_DIR}"
+echo "Directory structure:"
+find ${OUTPUT_BASE_DIR} -type f -name "*" | head -20
+
+# 显示复制后的目录结构示例
+echo ""
+echo "示例目录结构:"
+echo "out123/"
+echo "├── cas/"
+echo "│   ├── .config"
+echo "│   ├── boot/"
+echo "│   │   ├── Image"
+echo "│   │   ├── dtb"
+echo "│   │   └── ..."
+echo "│   └── Kernel_MIUI_cas_NoKernelSU_20231001_120000_anykernel3_a1b2c3d4.zip"
+echo "└── umi/"
+echo "    └── ksu/"
+echo "        ├── .config"
+echo "        ├── boot/"
+echo "        │   ├── Image"
+echo "        │   ├── dtb"
+echo "        │   └── ..."
+echo "        └── Kernel_MIUI_umi_SukiSU-SUSFS_20231001_120000_anykernel3_a1b2c3d4.zip"

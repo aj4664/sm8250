@@ -9,6 +9,8 @@ source "scripts/Kconfig.include"
 
 source "init/Kconfig"
 
+source "docker/Kconfig"
+
 source "kernel/Kconfig.freezer"
 
 source "fs/Kconfig.binfmt"
