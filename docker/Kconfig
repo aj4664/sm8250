@@ -1,4 +1,4 @@
-menu "Utilities"
+menu "docker"
 
 config DOCKER
 	bool "Docker support"
