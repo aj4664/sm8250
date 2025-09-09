@@ -205,6 +205,7 @@ fi
 
 scripts/config --file out/.config \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
+    -e DOCKER \
     -e PERF_CRITICAL_RT_TASK \
     -e SF_BINDER \
     -e OVERLAY_FS \
