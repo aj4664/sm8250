@@ -38,7 +38,7 @@
 #include <linux/kprobes.h>
 #include <linux/stacktrace.h>
 #include <linux/kallsyms.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0) && defined(CONFIG_MODULES)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0) && defined(CONFIG_MODULES)
 #include <linux/moduleloader.h> // 需要启用 CONFIG_MODULES
 #endif
 #include "kpm.h"
