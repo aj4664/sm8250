@@ -80,7 +80,7 @@ void ksu_android_ns_fs_check()
 }
 
 int ksu_access_ok(const void *addr, unsigned long size) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
     /* For kernels before 5.0.0, pass the type argument to access_ok. */
     return access_ok(VERIFY_READ, addr, size);
 #else
