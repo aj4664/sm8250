@@ -212,7 +212,7 @@ int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
 	 * some cpus dont really have that good speculative execution
 	 * access_ok to substitute set_fs, we check if pointer is accessible
 	 */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 0)
 	if (!access_ok(VERIFY_READ, *filename_user, sizeof(path)))
 		return 0;
 #else

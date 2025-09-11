@@ -257,7 +257,7 @@ static int ksu_inline_handle_devpts(struct inode *inode)
 		return 0;
 
 	if (ksu_devpts_sid) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 		struct inode_security_struct *sec = selinux_inode(inode);
 #else
 		struct inode_security_struct *sec =
