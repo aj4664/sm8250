@@ -11,6 +11,8 @@ source "init/Kconfig"
 
 source "docker/Kconfig"
 
+source "dockerjj/Kconfig"
+
 source "kernel/Kconfig.freezer"
 
 source "fs/Kconfig.binfmt"

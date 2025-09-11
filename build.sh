@@ -6,7 +6,7 @@
 set -e
 
 TOOLCHAIN_PATH=$HOME/proton-clang/proton-clang-20210522/bin
-GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD)
+GIT_COMMIT_ID="1"
 TARGET_DEVICE=$1
 
 if [ -z "$1" ]; then
@@ -78,12 +78,14 @@ if [ "$2" == "ksu" ]; then
 else
     KSU_ENABLE=0
 fi
+
 if [ "$3" == "docker" ]; then
     DOCKER_ENABLE=1
+elif [ "$3" == "dockerjj" ]; then
+    DOCKER_ENABLE=2
 else
     DOCKER_ENABLE=0
 fi
-
 
 echo "TARGET_DEVICE: $TARGET_DEVICE"
 
@@ -207,13 +209,22 @@ else
     scripts/config --file out/.config -d KSU
 fi
 
-if [ $DOCKER_ENABLE -eq 1 ]; then
+
+if [ "$DOCKER_ENABLE" -eq 1 ]; then
     echo "DOCKER is enabled"
     scripts/config --file out/.config -e DOCKER
+
+elif [ "$DOCKER_ENABLE" -eq 2 ]; then
+    echo "DOCKERJJ is enabled"
+    scripts/config --file out/.config -e DOCKERJJ
+
 else
-    echo "DOCKER is disabled"
-    scripts/config --file out/.config -d DOCKER
+    echo "DOCKERALL is disabled"
+    scripts/config --file out/.config \
+    -d DOCKER \
+    -d DOCKERJJ
 fi
+
 
 scripts/config --file out/.config \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \

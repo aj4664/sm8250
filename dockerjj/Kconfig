@@ -1,0 +1,21 @@
+menu "dockerjj"
+
+config DockerJJ
+	bool "DockerJJ support"
+	default n
+	help
+		Enable options required for DockerJJ.
+
+	select NAMESPACES
+	select NET_NS
+	select PID_NS
+	select IPC_NS
+	select UTS_NS
+	select CGROUPS
+	select CGROUP_CPUACCT
+	select CGROUP_DEVICE
+	select CGROUP_FREEZER
+	select CGROUP_SCHED
+	select POSIX_MQUEUE
+
+endmenu

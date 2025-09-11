@@ -2,7 +2,7 @@ menu "docker"
 
 config DOCKER
 	bool "Docker support"
-	default y
+	default n
 	help
 		Enable options required for Docker.
 
