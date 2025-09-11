@@ -78,6 +78,11 @@ if [ "$2" == "ksu" ]; then
 else
     KSU_ENABLE=0
 fi
+if [ "$3" == "docker" ]; then
+    DOCKER_ENABLE=1
+else
+    DOCKER_ENABLE=0
+fi
 
 
 echo "TARGET_DEVICE: $TARGET_DEVICE"
@@ -202,10 +207,16 @@ else
     scripts/config --file out/.config -d KSU
 fi
 
+if [ $DOCKER_ENABLE -eq 1 ]; then
+    echo "DOCKER is enabled"
+    scripts/config --file out/.config -e DOCKER
+else
+    echo "DOCKER is disabled"
+    scripts/config --file out/.config -d DOCKER
+fi
 
 scripts/config --file out/.config \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
-    -e DOCKER \
     -e PERF_CRITICAL_RT_TASK	\
     -e SF_BINDER		\
     -e OVERLAY_FS		\

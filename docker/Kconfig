@@ -1,4 +1,4 @@
-menu "Utilities"
+menu "docker"
 
 config DOCKER
 	bool "Docker support"
@@ -149,7 +149,7 @@ config DOCKER_BTRFS
 	help
 		Yes if you are using btrfs
 
-#	select BTRFS_FS
+	select BTRFS_FS
 	select BTRFS_FS_POSIX_ACL
 
 config DOCKER_DEVICE_MAPPER
