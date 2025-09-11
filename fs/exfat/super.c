@@ -216,7 +216,7 @@ static struct inode *exfat_alloc_inode(struct super_block *sb)
 	return &ei->vfs_inode;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 static void exfat_free_inode(struct inode *inode)
 {
 	kmem_cache_free(exfat_inode_cachep, EXFAT_I(inode));
@@ -250,7 +250,7 @@ static int exfat_remount(struct super_block *sb, int *flags, char *data)
 
 static const struct super_operations exfat_sops = {
 	.alloc_inode	= exfat_alloc_inode,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 	.free_inode	= exfat_free_inode,
 #else
 	.destroy_inode	= exfat_destroy_inode,
@@ -971,7 +971,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_magic = EXFAT_SUPER_MAGIC;
 	sb->s_op = &exfat_sops;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 	sb->s_time_gran = 10 * NSEC_PER_MSEC;
 	sb->s_time_min = EXFAT_MIN_TIMESTAMP_SECS;
 	sb->s_time_max = EXFAT_MAX_TIMESTAMP_SECS;
