@@ -221,7 +221,7 @@ if [ $TYPE = test ]; then
 
     if [ $LEVEL = 4 ]; then
         git revert 48d6466f502f0ed1ecafbad71aac79ec64f60cd8 --no-edit
-        git cherry-pick 2897f115faac5228433002d380ab0176ba825c95
+        git revert 525dbd2c5c97546c1305a245f0c613d9a4f39519 --no-edit
         git revert a3f0009c637419795baf4195c4b236aa4c23a00a --no-edit
         DESC="POCO F3 build without susfs"
         build
@@ -233,7 +233,7 @@ if [ $TYPE = test ]; then
     if [ $LEVEL = 5 ]; then
         if [ $EXTRA = "!4"]; then
             git revert 48d6466f502f0ed1ecafbad71aac79ec64f60cd8 --no-edit
-            git cherry-pick 2897f115faac5228433002d380ab0176ba825c95
+            git revert 525dbd2c5c97546c1305a245f0c613d9a4f39519 --no-edit
             git revert a3f0009c637419795baf4195c4b236aa4c23a00a --no-edit
         fi
         DEVICE="pipa"
@@ -247,7 +247,7 @@ if [ $TYPE = test ]; then
     if [ $LEVEL = 6 ]; then
         if [ $EXTRA = "!4"]; then
             git revert 48d6466f502f0ed1ecafbad71aac79ec64f60cd8 --no-edit
-            git cherry-pick 2897f115faac5228433002d380ab0176ba825c95
+            git revert 525dbd2c5c97546c1305a245f0c613d9a4f39519 --no-edit
             git revert a3f0009c637419795baf4195c4b236aa4c23a00a --no-edit
         fi
         DEVICE="alioth"
@@ -296,7 +296,7 @@ if [ $TYPE = test ]; then
 
     if [ $LEVEL = 10 ]; then
         git revert 48d6466f502f0ed1ecafbad71aac79ec64f60cd8 --no-edit
-        git cherry-pick 2897f115faac5228433002d380ab0176ba825c95
+        git revert 525dbd2c5c97546c1305a245f0c613d9a4f39519 --no-edit
         git revert a3f0009c637419795baf4195c4b236aa4c23a00a --no-edit
         DESC="POCO F3 MIUI build without susfs"
         build
@@ -308,7 +308,7 @@ if [ $TYPE = test ]; then
     if [ $LEVEL = 11 ]; then
         if [ $EXTRA = "!10" ]; then
             git revert 48d6466f502f0ed1ecafbad71aac79ec64f60cd8 --no-edit
-            git cherry-pick 2897f115faac5228433002d380ab0176ba825c95
+            git revert 525dbd2c5c97546c1305a245f0c613d9a4f39519 --no-edit
             git revert a3f0009c637419795baf4195c4b236aa4c23a00a --no-edit
         fi
         DEVICE="pipa"
@@ -322,7 +322,7 @@ if [ $TYPE = test ]; then
     if [ $LEVEL = 12 ]; then
         if [ $EXTRA = "!10" ]; then
             git revert 48d6466f502f0ed1ecafbad71aac79ec64f60cd8 --no-edit
-            git cherry-pick 2897f115faac5228433002d380ab0176ba825c95
+            git revert 525dbd2c5c97546c1305a245f0c613d9a4f39519 --no-edit
             git revert a3f0009c637419795baf4195c4b236aa4c23a00a --no-edit
         fi
         DEVICE="alioth"
