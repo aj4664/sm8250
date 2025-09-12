@@ -193,7 +193,7 @@ qdf_export_symbol(qdf_wake_up_process);
 	defined(CONFIG_STACKTRACE) && !defined(CONFIG_ARCH_STACKWALK)
 #define QDF_PRINT_TRACE_COUNT 32
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0))
 void qdf_print_thread_trace(qdf_thread_t *thread)
 {
 	const int spaces = 4;
