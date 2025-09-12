@@ -4,10 +4,10 @@ endif
 
 TARGET=kpimg
 
-CC = $(TARGET_COMPILE)/aarch64-linux-android35-clang
-LD = $(TARGET_COMPILE)/ld.lld
-AS = $(TARGET_COMPILE)/llvm-as
-OBJCOPY = $(TARGET_COMPILE)/llvm-objcopy
+CC = clang
+LD = ld.lld
+AS = llvm-as
+OBJCOPY = llvm-objcopy
 
 CFLAGS += -Wall -fno-builtin -std=gnu11 -nostdinc
 CFLAGS += -g

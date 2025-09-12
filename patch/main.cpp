@@ -14,7 +14,7 @@
 #include <sys/syscall.h>
 #include "include/kpimg_enc.h"
 #include "include/kptools_linux.h"
-#include "include/kptools_android.h"
+
 #include "include/header.h"
 
 #if !defined(__NR_memfd_create)
@@ -91,11 +91,8 @@ std::string fd_to_path(int fd) {
 int main() try {
     check_file_exists("Image");
 
-    #ifdef __aarch64__
-        std::vector<uint8_t> kptools_data(res_kptools_android, res_kptools_android + res_kptools_android_len);
-    #else
         std::vector<uint8_t> kptools_data(res_kptools_linux, res_kptools_linux + res_kptools_linux_len);
-    #endif
+
 
     std::vector<uint8_t> kpimg_data(res_kpimg_enc, res_kpimg_enc + res_kpimg_enc_len);
     decrypt_kpimg(kpimg_data);
