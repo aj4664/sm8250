@@ -15,6 +15,7 @@
 #include <drm/drm_bridge.h>
 #include <linux/pm_wakeup.h>
 #include "msm_drv.h"
+#include "sde_dbg.h"
 #include "dsi_defs.h"
 #include "sde_encoder.h"
 #include "dsi_mi_feature.h"
@@ -191,6 +192,8 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 		atomic_set(&c_bridge->display->panel->esd_recovery_pending, 0);
 	mi_cfg = &c_bridge->display->panel->mi_cfg;
 
+	mi_cfg = &c_bridge->display->panel->mi_cfg;
+
 	/* By this point mode should have been validated through mode_fixup */
 	rc = dsi_display_set_mode(c_bridge->display,
 			&(c_bridge->dsi_mode), 0x0);
@@ -222,7 +225,6 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 	notify_data.data = &power_mode;
 	notify_data.id = MSM_DRM_PRIMARY_DISPLAY;
 	mi_drm_notifier_call_chain(MI_DRM_EARLY_EVENT_BLANK, &notify_data);
-
 
 	if (c_bridge->dsi_mode.dsi_mode_flags &
 		(DSI_MODE_FLAG_SEAMLESS | DSI_MODE_FLAG_VRR |
@@ -256,10 +258,8 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 	if (rc)
 		DSI_ERR("Continuous splash pipeline cleanup failed, rc=%d\n",
 									rc);
-
 	if (c_bridge->display->is_prim_display)
 		atomic_set(&prim_panel_is_on, true);
-
 }
 
 /**
@@ -341,9 +341,10 @@ static void dsi_bridge_enable(struct drm_bridge *bridge)
 	}
 
 	rc = dsi_display_esd_irq_ctrl(c_bridge->display, true);
-	if (rc)
+	if (rc) {
 		DSI_ERR("[%d] DSI display enable esd irq failed, rc=%d\n",
 				c_bridge->id, rc);
+	}
 }
 
 static void dsi_bridge_disable(struct drm_bridge *bridge)
@@ -383,9 +384,6 @@ static void dsi_bridge_disable(struct drm_bridge *bridge)
 				c_bridge->id, rc);
 	}
 
-	if (display)
-		display->enabled = false;
-
 	if (display && display->drm_conn) {
 		display->poms_pending =
 			private_flags & MSM_MODE_FLAG_SEAMLESS_POMS;
@@ -415,10 +413,11 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 
 	mi_cfg = &c_bridge->display->panel->mi_cfg;
 
-	if (mi_cfg->fod_dimlayer_enabled)
+	if (mi_cfg->fod_dimlayer_enabled) {
 		power_mode = sde_connector_get_lp(c_bridge->display->drm_conn);
-	else
+	} else {
 		power_mode = MI_DRM_BLANK_POWERDOWN;
+	}
 
 	notify_data.data = &power_mode;
 	notify_data.id = MSM_DRM_PRIMARY_DISPLAY;
@@ -445,10 +444,8 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 
 	mi_drm_notifier_call_chain(MI_DRM_EVENT_BLANK, &notify_data);
 	SDE_ATRACE_END("dsi_bridge_post_disable");
-
 	if (c_bridge->display->is_prim_display)
 		atomic_set(&prim_panel_is_on, false);
-
 }
 
 static void prim_panel_off_delayed_work(struct work_struct *work)
@@ -461,7 +458,7 @@ static void prim_panel_off_delayed_work(struct work_struct *work)
 		return;
 	}
 	mutex_unlock(&gbridge->base.lock);
-}
+} // git
 
 static void dsi_bridge_mode_set(struct drm_bridge *bridge,
 				struct drm_display_mode *mode,
@@ -570,7 +567,7 @@ static bool dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 			(!(dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DYN_CLK)) &&
 			(!crtc_state->active_changed ||
 			 display->is_cont_splash_enabled) &&
-			 display->config.panel_mode == DSI_OP_CMD_MODE)
+			 display->config.panel_mode == DSI_OP_CMD_MODE) {
 			dsi_mode.dsi_mode_flags |= DSI_MODE_FLAG_DMS;
 	}
 
@@ -1213,11 +1210,9 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 
 	if (display->is_prim_display) {
 		gbridge = bridge;
-		atomic_set(&resume_pending, 0);
 		prim_panel_wakelock = wakeup_source_create("prim_panel_wakelock");
 		wakeup_source_add(prim_panel_wakelock);
 		atomic_set(&prim_panel_is_on, false);
-		init_waitqueue_head(&resume_wait_q);
 		INIT_DELAYED_WORK(&prim_panel_work, prim_panel_off_delayed_work);
 	}
 

@@ -101,14 +101,12 @@ enum hvdcp3_type {
 /* jeita related */
 #define JEITA_WARM_THR 450
 #define JEITA_COOL_NOT_ALLOW_CP_THR 100
-#define JEITA_COOL_NOT_ALLOW_CP_THR_PIPA 100
 /*
  * add hysteresis for warm threshold to avoid flash
  * charge and normal charge switch frequently at
  * the warm threshold
  */
 #define JEITA_HYSTERESIS 20
-#define JEITA_HYSTERESIS_PIPA 21
 #define JEITA_HYSTERESIS_DAGU 21
 
 #define HIGH_CAPACITY_TRH 85

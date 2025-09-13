@@ -8,6 +8,7 @@
 * full: (wr_index +1) % BUFFER_SIZE == rd_index
 * total avaliable size is BUFFER_SIZE -1
 */
+#define DEBUG
 #include <linux/errno.h>
 #include "ringbuffer.h"
 

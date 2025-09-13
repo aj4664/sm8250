@@ -79,17 +79,68 @@ static int maxF(int a, int b) {
 }
 #endif
 
+#if defined(CONFIG_MACH_XIAOMI_PSYCHE) || defined(CONFIG_MACH_XIAOMI_MUNCH) || defined(CONFIG_MACH_XIAOMI_DAGU)
+#include <linux/debugfs.h>
+
+#define HEADSET_STATUS_RECORD_INDEX_PLUGIN_HEADSET (3)
+#define HEADSET_STATUS_RECORD_INDEX_PLUGIN_HEADPHONE (1)
+#define HEADSET_STATUS_RECORD_INDEX_PLUGOUT (0)
+
+#define HEADSET_EVENT_PLUGIN_HEADPHONE (0)
+#define HEADSET_EVENT_PLUGIN_MICROPHONE (4)
+#define HEADSET_EVENT_PLUGIN_JACK (8)
+
+#define HEADSET_EVENT_KEY_PREVIOUS_DOWN (0)
+#define HEADSET_EVENT_KEY_PREVIOUS_UP (4)
+
+#define HEADSET_EVENT_KEY_NEXT_DOWN (0)
+#define HEADSET_EVENT_KEY_NEXT_UP (4)
+
+#define HEADSET_EVENT_KEY_MEDIA_DOWN (0)
+#define HEADSET_EVENT_KEY_MEDIA_UP (4)
+
+#define HEADSET_EVENT_PLUGOUT_HEADPHONE (0)
+#define HEADSET_EVENT_PLUGOUT_MICROPHONE (4)
+#define HEADSET_EVENT_PLUGOUT_JACK (8)
+
+#define DEBUGFS_DIR_NAME "mbhc"
+#define DEBUGFS_HEADSET_STATUS_FILE_NAME "headset_status"
+#define HEADSET_EVENT_MAX (5)
+
+static struct dentry* mbhc_debugfs_dir;
+
+static ssize_t headset_status_read(struct file *filp, char __user *buffer,
+		size_t count, loff_t *ppos);
+static ssize_t headset_status_write(struct file *filp, const char __user *buffer,
+		size_t count, loff_t *ppos);
+static void add_headset_event(int status, int mask, int jackstatus);
+static u16 headset_status[HEADSET_EVENT_MAX] = {0,0,0,0,0};
+
+// When the number of events is more than 15, no more growth.
+static int maxF(int a, int b) {
+	int x = 0;
+	x = a & (0xF << b);
+	x += 0x1 << b;
+	if (x > (0xF << b)) {
+		x = 0xF << b;
+		return (x + (a & ~(0xF << b)));
+	} else {
+		return a + (0x1 << b);
+	}
+}
+#endif
+
 void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 			  struct snd_soc_jack *jack, int status, int mask)
 {
 	snd_soc_jack_report(jack, status, mask);
-#if defined(CONFIG_MACH_XIAOMI_PSYCHE) || defined(CONFIG_MACH_XIAOMI_MUNCH) || defined(CONFIG_MACH_XIAOMI_DAGU) || defined(CONFIG_MACH_XIAOMI_PIPA)
+#if defined(CONFIG_MACH_XIAOMI_PSYCHE) || defined(CONFIG_MACH_XIAOMI_MUNCH) || defined(CONFIG_MACH_XIAOMI_DAGU)
 	add_headset_event(mbhc->hph_status, mask, jack->status);
 #endif
 }
 EXPORT_SYMBOL(wcd_mbhc_jack_report);
 
-#if defined(CONFIG_MACH_XIAOMI_PSYCHE) || defined(CONFIG_MACH_XIAOMI_MUNCH) || defined(CONFIG_MACH_XIAOMI_DAGU) || defined(CONFIG_MACH_XIAOMI_PIPA)
+#if defined(CONFIG_MACH_XIAOMI_PSYCHE) || defined(CONFIG_MACH_XIAOMI_MUNCH) || defined(CONFIG_MACH_XIAOMI_DAGU)
 static void add_headset_event(int status, int mask, int jackstatus) {
 	if (status == HEADSET_STATUS_RECORD_INDEX_PLUGOUT) {
 		headset_status[4] = maxF(headset_status[4], HEADSET_EVENT_PLUGOUT_HEADPHONE);
@@ -970,6 +1021,9 @@ void wcd_mbhc_find_plug_and_report(struct wcd_mbhc *mbhc,
 		if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADPHONE)
 			wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADPHONE);
 
+		if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADPHONE)
+			wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADPHONE);
+
 		/*
 		 * If Headphone was reported previously, this will
 		 * only report the mic line
@@ -1723,38 +1777,6 @@ static int wcd_mbhc_set_keycode(struct wcd_mbhc *mbhc)
 	return result;
 }
 
-static int wcd_mbhc_init_gpio(struct wcd_mbhc *mbhc,
-			      struct wcd_mbhc_config *mbhc_cfg,
-			      const char *gpio_dt_str,
-			      int *gpio, struct device_node **gpio_dn)
-{
-	int rc = 0;
-	struct snd_soc_component *component;
-	struct snd_soc_card *card;
-
-	if (!mbhc || !mbhc_cfg)
-		return -EINVAL;
-
-	component = mbhc->component;
-	card = component->card;
-
-	dev_dbg(mbhc->component->dev, "%s: gpio %s\n", __func__, gpio_dt_str);
-
-	*gpio_dn = of_parse_phandle(card->dev->of_node, gpio_dt_str, 0);
-
-	if (!(*gpio_dn)) {
-		*gpio = of_get_named_gpio(card->dev->of_node, gpio_dt_str, 0);
-		if (!gpio_is_valid(*gpio)) {
-			dev_err(card->dev, "%s, property %s not in node %s",
-				__func__, gpio_dt_str,
-				card->dev->of_node->full_name);
-			rc = -EINVAL;
-		}
-	}
-
-	return rc;
-}
-
 static int wcd_mbhc_non_usb_c_event_changed(struct notifier_block *nb,
 					unsigned long evt, void *ptr)
 {
@@ -1806,10 +1828,6 @@ static int wcd_mbhc_usbc_ana_event_handler(struct notifier_block *nb,
 	dev_dbg(mbhc->component->dev, "%s: mode = %lu\n", __func__, mode);
 
 	if (mode == POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER) {
-#ifdef CONFIG_AUDIO_UART_DEBUG
-		msm_cdc_pinctrl_select_active_state(config->uart_audio_switch_gpio_p);
-		dev_dbg(mbhc->component->dev, "disable uart\n");
-#endif
 		if (mbhc->mbhc_cb->clk_setup) {
 			mbhc->mbhc_cb->clk_setup(mbhc->component, false);
 			mbhc->mbhc_cb->clk_setup(mbhc->component, true);
@@ -1834,15 +1852,6 @@ static int wcd_mbhc_usbc_ana_event_handler(struct notifier_block *nb,
 
 		WCD_MBHC_REG_READ(WCD_MBHC_L_DET_EN, det_status);
 		pr_debug("%s: det_status = %x\n", __func__, det_status);
-#ifdef CONFIG_AUDIO_UART_DEBUG
-		msm_cdc_pinctrl_select_sleep_state(config->uart_audio_switch_gpio_p);
-		dev_dbg(mbhc->component->dev, "enable uart\n");
-#endif
-	} else {
-#ifdef CONFIG_AUDIO_UART_DEBUG
-		msm_cdc_pinctrl_select_sleep_state(config->uart_audio_switch_gpio_p);
-		dev_dbg(mbhc->component->dev, "enable uart\n");
-#endif
 	}
 	return 0;
 }
@@ -2010,13 +2019,15 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_component *component,
 	const char *hph_thre = "qcom,msm-mbhc-hs-mic-min-threshold-mv";
 
 	pr_debug("%s: enter\n", __func__);
-#if defined(CONFIG_MACH_XIAOMI_PSYCHE) || defined(CONFIG_MACH_XIAOMI_MUNCH) || defined(CONFIG_MACH_XIAOMI_DAGU) || defined(CONFIG_MACH_XIAOMI_PIPA)
+
+#if defined(CONFIG_MACH_XIAOMI_PSYCHE) || defined(CONFIG_MACH_XIAOMI_MUNCH) || defined(CONFIG_MACH_XIAOMI_DAGU)
 	mbhc_debugfs_dir = debugfs_create_dir(DEBUGFS_DIR_NAME, NULL);
 	if (!IS_ERR(mbhc_debugfs_dir)) {
 		debugfs_create_file(DEBUGFS_HEADSET_STATUS_FILE_NAME, 0666,
 				mbhc_debugfs_dir, NULL, &mbhc_headset_status_fops);
 	}
 #endif
+
 	ret = of_property_read_u32(card->dev->of_node, hph_switch, &hph_swh);
 	if (ret) {
 		dev_err(card->dev,

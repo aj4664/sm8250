@@ -42,13 +42,7 @@
 #include "sde_power_handle.h"
 #include "sde_core_perf.h"
 #include "sde_trace.h"
-#include "xiaomi_frame_stat.h"
 #include "dsi_display.h"
-
-#ifdef CONFIG_DRM_SDE_EXPO
-#include "dsi_display.h"
-#include "dsi_panel.h"
-#endif
 
 #define SDE_PSTATES_MAX (SDE_STAGE_MAX * 4)
 #define SDE_MULTIRECT_PLANE_MAX (SDE_STAGE_MAX * 2)
@@ -1487,13 +1481,6 @@ static void _sde_crtc_blend_setup_mixer(struct drm_crtc *crtc,
 		if (cstate->fod_dim_layer)
 			_sde_crtc_setup_dim_layer_cfg(crtc, sde_crtc,
 					mixer, cstate->fod_dim_layer);
-#ifdef CONFIG_DRM_SDE_EXPO
-		if (cstate->exposure_dim_layer) {
-			_sde_crtc_setup_dim_layer_cfg(crtc, sde_crtc,
-					mixer, cstate->exposure_dim_layer);
-		}
-#endif
-
 	}
 
 	_sde_crtc_program_lm_output_roi(crtc);
@@ -5029,12 +5016,6 @@ static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 
 	sde_crtc_fod_atomic_check(cstate, pstates, cnt);
 
-#ifdef CONFIG_DRM_SDE_EXPO
-	rc = sde_crtc_exposure_atomic_check(cstate, pstates, cnt);
-	if (rc)
-		return rc;
-#endif
-
 	/* assign mixer stages based on sorted zpos property */
 	rc = _sde_crtc_check_zpos(state, sde_crtc, pstates, cstate, mode, cnt);
 	if (rc)
@@ -5447,7 +5428,7 @@ static void sde_crtc_install_properties(struct drm_crtc *crtc,
 
 	/* mi properties */
 	msm_property_install_range(&sde_crtc->property_info, "mi_fod_sync_info",
-		0x0, 0, U32_MAX, 0, CRCT_PROP_MI_FOD_SYNC_INFO);
+		0x0, 0, U32_MAX, 0, CRTC_PROP_MI_FOD_SYNC_INFO);
 
 	/* range properties */
 	msm_property_install_range(&sde_crtc->property_info,
@@ -7025,4 +7006,12 @@ void sde_crtc_update_cont_splash_settings(struct drm_crtc *crtc)
 	sde_crtc->cur_perf.core_clk_rate = (rate > 0) ?
 					rate : kms->perf.max_core_clk_rate;
 	sde_crtc->cur_perf.core_clk_rate = kms->perf.max_core_clk_rate;
+}
+
+uint32_t sde_crtc_get_mi_fod_sync_info(struct sde_crtc_state *cstate)
+{
+	if (!cstate)
+		return 0;
+
+	return sde_crtc_get_property(cstate, CRTC_PROP_MI_FOD_SYNC_INFO);
 }

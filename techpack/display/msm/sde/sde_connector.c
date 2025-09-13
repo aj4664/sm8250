@@ -88,29 +88,18 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	c_conn = bl_get_data(bd);
 	display = (struct dsi_display *) c_conn->display;
 
-	if((display->panel->mi_cfg.panel_id == 0x4C38314100420400 ||
-		display->panel->mi_cfg.panel_id == 0x004B383100350201 ||
-		display->panel->mi_cfg.panel_id == 0x004B383100420200 ||
-		display->panel->mi_cfg.panel_id == 0x4A3200420201||
-		display->panel->mi_cfg.panel_id == 0x004A3200420201||
-		display->panel->mi_cfg.panel_id == 0x004A3200380c00)
-		&& (bd->thermal_brightness_limit != 0)) {
+	if((display->panel->mi_cfg.panel_id == 0x4C38314100420400) && (bd->thermal_brightness_limit != 0)) {
 		brightness = (brightness <= bd->thermal_brightness_limit) ? brightness : bd->thermal_brightness_limit;
 		bd->props.brightness = brightness;
 	}
-	if((display->panel->mi_cfg.panel_id == 0x4D38324100360200||
-		display->panel->mi_cfg.panel_id == 0x4D38324100420200)
-		&& (bd->thermal_brightness_clone_limit != 0)) {
-		brightness = (brightness <= bd->thermal_brightness_clone_limit) ? brightness : bd->thermal_brightness_clone_limit;
-		bd->props.brightness = brightness;
-	}
+
 	if ((bd->props.power != FB_BLANK_UNBLANK) ||
 			(bd->props.state & BL_CORE_FBBLANK) ||
 			(bd->props.state & BL_CORE_SUSPENDED))
 		brightness = 0;
 
-	if (brightness > display->panel->bl_config.brightness_max_level)
-		brightness = display->panel->bl_config.brightness_max_level;
+	if (brightness > display->panel->bl_config.bl_max_level)
+		brightness = display->panel->bl_config.bl_max_level;
 
 	if (brightness) {
 		int bl_min = display->panel->bl_config.bl_min_level ? : 1;
@@ -180,7 +169,6 @@ static int sde_backlight_setup(struct sde_connector *c_conn,
 	bl_config = &display->panel->bl_config;
 	props.max_brightness = bl_config->brightness_max_level;
 	props.brightness = bl_config->brightness_init_level;
-	props.brightness_clone_backup = 307;
 	snprintf(bl_node_name, BL_NODE_NAME_SIZE, "panel%u-backlight",
 							display_count);
 	c_conn->bl_device = backlight_device_register(bl_node_name, dev->dev,
@@ -1081,42 +1069,38 @@ static int _sde_connector_mi_dimlayer_hbm_fence(struct drm_connector *connector)
 			/*sde_crtc_fod_ui_ready(dsi_display, 1, 0);*/
 		}
 	}
-
+#if 0
+	icon = c_conn->mi_dimlayer_state.mi_dimlayer_type & MI_DIMLAYER_FOD_ICON;
+	if (last_icon != icon) {
+		if (icon) {
+			sde_crtc_fod_ui_ready(dsi_display, 2, 1);
+		} else {
+			if (last_icon)
+				sde_crtc_fod_ui_ready(dsi_display, 2, 0);
+		}
+	}
+	last_icon = icon;
+#endif
 	//for l3a && j11
-	if (mi_cfg->panel_id == 0x4C334100420200 ||
-	    mi_cfg->panel_id == 0x4A323200380801) {
+	if (mi_cfg->panel_id == 0x4C334100420200 || mi_cfg->panel_id == 0x4A323200380801) {
 		if (!mi_cfg->layer_aod_flag) {
 			if (c_conn->lp_mode == SDE_MODE_DPMS_ON)
 				mi_cfg->bl_enable = true;
-			if (!mi_cfg->bl_wait_frame &&
-			    c_conn->lp_mode == SDE_MODE_DPMS_ON) {
-				set_sde_encoder_virt_ready_kickoff(connector,
-								   true);
+			if (!mi_cfg->bl_wait_frame && c_conn->lp_mode == SDE_MODE_DPMS_ON) {
+				set_sde_encoder_virt_ready_kickoff(connector,true);
 				if (Prepare_Kickoff) {
-					SDE_ATRACE_BEGIN(
-						"set_backlight_after_aod");
-					mutex_lock(
-						&dsi_display->panel->panel_lock);
-					dsi_panel_set_backlight(
-						dsi_display->panel,
-						dsi_display->panel->mi_cfg
-							.last_bl_level);
-					mutex_unlock(
-						&dsi_display->panel->panel_lock);
-					SDE_ATRACE_END(
-						"set_backlight_after_aod");
-					SDE_INFO(
-						"backlight %d set after aod layer\n",
-						mi_cfg->last_bl_level);
+					SDE_ATRACE_BEGIN("set_backlight_after_aod");
+					mutex_lock(&dsi_display->panel->panel_lock);
+					dsi_panel_set_backlight(dsi_display->panel, dsi_display->panel->mi_cfg.last_bl_level);
+					mutex_unlock(&dsi_display->panel->panel_lock);
+					SDE_ATRACE_END("set_backlight_after_aod");
+					SDE_INFO("backlight %d set after aod layer\n", mi_cfg->last_bl_level);
 					mi_cfg->bl_wait_frame = true;
-					set_sde_encoder_virt_ready_kickoff(
-						connector, false);
-					set_sde_encoder_virt_prepare_kickoff(
-						connector, false);
+					set_sde_encoder_virt_ready_kickoff(connector,false);
+					set_sde_encoder_virt_prepare_kickoff(connector,false);
 				}
 			} else
-				set_sde_encoder_virt_ready_kickoff(connector,
-								   false);
+				set_sde_encoder_virt_ready_kickoff(connector,false);
 		}
 	}
 
@@ -3000,14 +2984,6 @@ static irqreturn_t esd_err_irq_handle(int irq, void *data)
 	struct dsi_display *display = c_conn->display;
 	struct drm_event event;
 	int power_mode;
-	const char *sde_power_mode_str[] = {
-		[SDE_MODE_DPMS_ON] = "SDE_MODE_DPMS_ON",
-		[SDE_MODE_DPMS_LP1] = "SDE_MODE_DPMS_LP1",
-		[SDE_MODE_DPMS_LP2] = "SDE_MODE_DPMS_LP2",
-		[SDE_MODE_DPMS_STANDBY] = "SDE_MODE_DPMS_STANDBY",
-		[SDE_MODE_DPMS_SUSPEND] = "SDE_MODE_DPMS_SUSPEND",
-		[SDE_MODE_DPMS_OFF] = "SDE_MODE_DPMS_OFF",
-	};
 
 	if (!display || !display->panel) {
 		SDE_ERROR("invalid display/panel\n");
@@ -3019,8 +2995,6 @@ static irqreturn_t esd_err_irq_handle(int irq, void *data)
 		SDE_ERROR("trigger esd by mistake,return\n");
 		return IRQ_HANDLED;
 	}
-
-	DSI_INFO("panel esd irq trigging \n");
 
 	if (c_conn->connector_type == DRM_MODE_CONNECTOR_DSI) {
 		dsi_panel_acquire_panel_lock(display->panel);
@@ -3050,7 +3024,6 @@ static irqreturn_t esd_err_irq_handle(int irq, void *data)
 		}
 
 		power_mode = display->panel->power_mode;
-		DSI_INFO("power_mode = %s\n", sde_power_mode_str[power_mode]);
 
 		dsi_panel_release_panel_lock(display->panel);
 
@@ -3078,7 +3051,6 @@ static int sde_connector_register_esd_irq(struct sde_connector *c_conn)
 {
 	struct dsi_display *display = c_conn->display;
 	int rc = 0;
-	int rc2 = 0;
 
 	/* register esd irq and enable it after panel enabled */
 	if (c_conn->connector_type == DRM_MODE_CONNECTOR_DSI) {
@@ -3086,40 +3058,16 @@ static int sde_connector_register_esd_irq(struct sde_connector *c_conn)
 			SDE_ERROR("invalid display/panel\n");
 			return -EINVAL;
 		}
-		if((display->panel->mi_cfg.panel_id == 0x4D38324100360200) || (display->panel->mi_cfg.panel_id == 0x4D38324100420200))
-		{
-			if ((display->panel->mi_cfg.esd_err_irq_gpio > 0) && (display->panel->mi_cfg.esd_err_irq_gpio_sec > 0)) {
-				rc = request_threaded_irq(display->panel->mi_cfg.esd_err_irq,
-					NULL, esd_err_irq_handle,
-					display->panel->mi_cfg.esd_err_irq_flags,
-					"esd_err_irq", c_conn);
-				rc2 = request_threaded_irq(display->panel->mi_cfg.esd_err_irq_sec,
-					NULL, esd_err_irq_handle,
-					display->panel->mi_cfg.esd_err_irq_gpio_flags_sec,
-					"esd_err_irq_sec", c_conn);
-	
-				if (rc || rc2) {
-					SDE_ERROR("register esd irq failed\n");
-				} else {
-					SDE_INFO("register esd irq success\n");
-					disable_irq(display->panel->mi_cfg.esd_err_irq);
-					disable_irq(display->panel->mi_cfg.esd_err_irq_sec);
-				}
-			}
-			SDE_ERROR("sde_connector_register_esd_irq %d\n",(rc || rc2));
-			return (rc || rc2);
-		}else{
-			if (display->panel->mi_cfg.esd_err_irq_gpio > 0) {
-				rc = request_threaded_irq(display->panel->mi_cfg.esd_err_irq,
-					NULL, esd_err_irq_handle,
-					display->panel->mi_cfg.esd_err_irq_flags,
-					"esd_err_irq", c_conn);
-				if (rc) {
-					SDE_ERROR("register esd irq failed\n");
-				} else {
-					SDE_INFO("register esd irq success\n");
-					disable_irq(display->panel->mi_cfg.esd_err_irq);
-				}
+		if (display->panel->mi_cfg.esd_err_irq_gpio > 0) {
+			rc = request_threaded_irq(display->panel->mi_cfg.esd_err_irq,
+				NULL, esd_err_irq_handle,
+				display->panel->mi_cfg.esd_err_irq_flags,
+				"esd_err_irq", c_conn);
+			if (rc) {
+				SDE_ERROR("register esd irq failed\n");
+			} else {
+				SDE_INFO("register esd irq success\n");
+				disable_irq(display->panel->mi_cfg.esd_err_irq);
 			}
 		}
 	}
@@ -3582,7 +3530,6 @@ struct drm_connector *sde_connector_init(struct drm_device *dev,
 
 	sde_connector_register_esd_irq(c_conn);
 
-
 	return &c_conn->base;
 
 error_destroy_property:
@@ -3685,10 +3632,7 @@ int sde_connector_event_notify(struct drm_connector *connector, uint32_t type,
 int sde_connector_hbm_ctl(struct drm_connector *connector, uint32_t op_code)
 {
 	int ret = 0;
-
-	SDE_ATRACE_BEGIN("sde_connector_hbm_ctl");
 	ret = dsi_display_hbm_set_disp_param(connector, op_code);
-	SDE_ATRACE_END("sde_connector_hbm_ctl");
 	return ret;
 }
 
@@ -3708,9 +3652,6 @@ static uint32_t interpolate(uint32_t x, uint32_t xa, uint32_t xb, uint32_t ya, u
 
 	bf = ya - (ya - yb) * (x - xa) / (xb - xa);
 
-	SDE_DEBUG("backlight brightness:%d, [i-1]bl:%d, [i]bl:%d, [i-1]alpha:%d, [i]alpha:%d, bf:%d",
-			x, xa, xb, ya, yb, bf);
-
 	return bf;
 }
 
@@ -3719,9 +3660,6 @@ static uint32_t brightness_to_alpha(struct dsi_panel_mi_cfg *mi_cfg, uint32_t br
 	int i;
 	int level = mi_cfg->brightnes_alpha_lut_item_count;
 
-	if (!mi_cfg->brightness_alpha_lut)
-		return 0;
-
 	if (brightness == 0x0)
 		return mi_cfg->brightness_alpha_lut[0].alpha;
 
@@ -3729,9 +3667,6 @@ static uint32_t brightness_to_alpha(struct dsi_panel_mi_cfg *mi_cfg, uint32_t br
 		if (mi_cfg->brightness_alpha_lut[i].brightness >= brightness)
 			break;
 	}
-
-	if (i == 0)
-		return mi_cfg->brightness_alpha_lut[i].alpha;
 
 	if (i == level)
 		return mi_cfg->brightness_alpha_lut[i - 1].alpha;

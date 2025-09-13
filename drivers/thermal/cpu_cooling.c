@@ -153,8 +153,9 @@ static int cpufreq_thermal_notifier(struct notifier_block *nb,
 		 * the floor_frequency, then adjust the policy->min.
 		 */
 		if (clipped_freq > cpufreq_cdev->clipped_freq)
-					clipped_freq = cpufreq_cdev->clipped_freq;
+			clipped_freq = cpufreq_cdev->clipped_freq;
 	}
+
 	cpufreq_verify_within_limits(policy, floor_freq, clipped_freq);
 	mutex_unlock(&cooling_list_lock);
 
@@ -174,8 +175,6 @@ void cpu_limits_set_level(unsigned int cpu, unsigned int max_freq)
 			for (level = 0; level <= cpufreq_cdev->max_level; level++) {
 				int target_freq = cpufreq_cdev->em->table[level].frequency;
 				if (max_freq <= target_freq) {
-					if (level < 11)
-						level = 11;
 					cdev = cpufreq_cdev->cdev;
 					if (cdev)
 						cdev->ops->set_cur_state(cdev, cpufreq_cdev->max_level - level);
@@ -868,10 +867,11 @@ void cpufreq_cooling_unregister(struct thermal_cooling_device *cdev)
 	last = list_empty(&cpufreq_cdev_list);
 	mutex_unlock(&cooling_list_lock);
 
-	if (last)
+	if (last) {
 		cpufreq_unregister_notifier(
 				&thermal_cpufreq_notifier_block,
 				CPUFREQ_POLICY_NOTIFIER);
+	}
 
 	thermal_cooling_device_unregister(cpufreq_cdev->cdev);
 	kfree(cpufreq_cdev->idle_time);

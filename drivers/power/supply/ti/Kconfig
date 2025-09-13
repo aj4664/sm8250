@@ -8,12 +8,6 @@ config PD_POLICY_MANAGER
 	help
 	  Say Y to include TI PD policy manager.
 
-config PD_POLICY_MANAGER_PIPA
-	tristate "TI policy manager"
-	depends on I2C
-	help
-	  Say Y to include TI PD policy manager.
-
 config PD_POLICY_MANAGER_DAGU
 	tristate "TI policy manager"
 	depends on I2C
@@ -32,26 +26,10 @@ config PD_POLICY_MANAGER_PSYCHE
 	help
 	  Say Y to include TI PD policy manager.
 
-config CHARGER_BQ25790
-	tristate "TI BQ25790 battery charger driver"
-	depends on I2C
-	help
-	  Say Y to enable support for TI bq2588x charger driver
-
 config BQ2597X_CHARGE_PUMP
 	tristate "BQ2597X power supply framework based driver"
 	depends on I2C
 	select PD_POLICY_MANAGER
-	help
-	  Say Y to include support for BQ2597X Charge Pump driver based on
-	  power supply framework.
-	  BQ2597X is a div2 charge pump capable of delivering 8A charge current
-	  with very high efficiency.
-
-config BQ2597X_CHARGE_PUMP_PIPA
-	tristate "BQ2597X power supply framework based driver"
-	depends on I2C
-	select PD_POLICY_MANAGER_PIPA
 	help
 	  Say Y to include support for BQ2597X Charge Pump driver based on
 	  power supply framework.

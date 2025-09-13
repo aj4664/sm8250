@@ -37,15 +37,8 @@
 
 #define IR_SPI_DRIVER_NAME		"ir-spi-led"
 
-#define IR_SPI_DEFAULT_RC_FREQUENCY	38000
-#define IR_SPI_DEFAULT_CHAR_FREQUENCY	1920000
-#define IR_SPI_BIT_PER_WORD		32
+#define IR_SPI_DEFAULT_FREQUENCY	38000
 #define IR_SPI_MAX_BUFSIZE		32768
-#define IR_SPI_DATA_BUFFER		150000
-
-#define IR_SERVICE_SUBSTR		"ir@1.0-service"
-
-static struct ir_spi_data *ir_spi_priv;
 
 struct ir_spi_data {
 	u32 freq;

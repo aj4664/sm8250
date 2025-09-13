@@ -43,7 +43,6 @@ DEFINE_MUTEX(dsi_display_clk_mutex);
 
 extern int mi_disp_lhbm_attach_primary_dsi_display(struct dsi_display *display);
 
-u8 dbgfs_tx_cmd_buf[SZ_4K];
 static char dsi_display_primary[MAX_CMDLINE_PARAM_LEN];
 static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN];
 static struct dsi_display_boot_param boot_displays[MAX_DSI_ACTIVE_DISPLAY] = {
@@ -677,7 +676,7 @@ static int dsi_display_read_status(struct dsi_display_ctrl *ctrl,
 			flags |= DSI_CTRL_CMD_LAST_COMMAND;
 		}
 		if ((cmds[i].msg.flags & MIPI_DSI_MSG_CMD_DMA_SCHED) &&
-			 (panel->panel_initialized))
+			(panel->panel_initialized))
 			flags |= DSI_CTRL_CMD_CUSTOM_DMA_SCHED;
 
 		if (config->status_cmd.state == DSI_CMD_SET_STATE_LP)
@@ -861,7 +860,6 @@ int dsi_display_check_status(struct drm_connector *connector, void *display,
 		config = &(panel->esd_config);
 		if (config->offset_cmd.count != 0) {
 			rc = dsi_panel_write_cmd_set(panel, &config->offset_cmd);
-			DSI_DEBUG("%s: read reg offset command rc = %d\n",__func__, rc);
 		}
 
 		rc = dsi_display_status_reg_read(dsi_display);
@@ -1224,14 +1222,6 @@ int dsi_display_set_power(struct drm_connector *connector,
 	struct dsi_panel_mi_cfg *mi_cfg;
 	int rc = 0;
 	struct mi_drm_notifier notify_data;
-	const char *sde_power_mode_str[] = {
-		[SDE_MODE_DPMS_ON] = "SDE_MODE_DPMS_ON",
-		[SDE_MODE_DPMS_LP1] = "SDE_MODE_DPMS_LP1",
-		[SDE_MODE_DPMS_LP2] = "SDE_MODE_DPMS_LP2",
-		[SDE_MODE_DPMS_STANDBY] = "SDE_MODE_DPMS_STANDBY",
-		[SDE_MODE_DPMS_SUSPEND] = "SDE_MODE_DPMS_SUSPEND",
-		[SDE_MODE_DPMS_OFF] = "SDE_MODE_DPMS_OFF",
-	};
 
 	if (!display || !display->panel) {
 		DSI_ERR("invalid display/panel\n");
@@ -1242,8 +1232,6 @@ int dsi_display_set_power(struct drm_connector *connector,
 
 	notify_data.data = &power_mode;
 	notify_data.id = MSM_DRM_PRIMARY_DISPLAY;
-
-	DSI_INFO("power_mode = %s\n", sde_power_mode_str[power_mode]);
 
 	switch (power_mode) {
 	case SDE_MODE_DPMS_LP1:
@@ -3086,12 +3074,8 @@ static int dsi_display_broadcast_cmd(struct dsi_display *display,
 		m_flags |= DSI_CTRL_CMD_LAST_COMMAND;
 	}
 
-	/*
-	 * During broadcast command dma scheduling is always recommended.
-	 * As long as the display is enabled and TE is running the
-	 * DSI_CTRL_CMD_CUSTOM_DMA_SCHED flag should be set.
-	 */
-	if (display->enabled) {
+	if ((msg->flags & MIPI_DSI_MSG_CMD_DMA_SCHED) &&
+			(display->panel->panel_initialized)) {
 		flags |= DSI_CTRL_CMD_CUSTOM_DMA_SCHED;
 		m_flags |= DSI_CTRL_CMD_CUSTOM_DMA_SCHED;
 	}
@@ -3264,7 +3248,7 @@ static ssize_t dsi_host_transfer(struct mipi_dsi_host *host,
 			cmd_flags |= DSI_CTRL_CMD_ASYNC_WAIT;
 
 		if ((msg->flags & MIPI_DSI_MSG_CMD_DMA_SCHED) &&
-				(display->enabled))
+				(display->panel->panel_initialized))
 			cmd_flags |= DSI_CTRL_CMD_CUSTOM_DMA_SCHED;
 
 		rc = dsi_ctrl_cmd_transfer(display->ctrl[ctrl_idx].ctrl, msg,
@@ -5327,7 +5311,23 @@ int dsi_display_splash_res_cleanup(struct  dsi_display *display)
 
 static int dsi_display_force_update_dsi_clk(struct dsi_display *display)
 {
-	int rc = 0;
+	int rc = 0, i = 0;
+	struct dsi_display_ctrl *ctrl;
+
+
+	/*
+	 * The force update dsi clock, is the only clock update function that toggles the state of
+	 * DSI clocks without any ref count protection. With the addition of ASYNC command wait,
+	 * there is a need for adding a check for any queued waits before updating these clocks.
+	 */
+	display_for_each_ctrl(i, display) {
+		ctrl = &display->ctrl[i];
+		if (!ctrl->ctrl || !ctrl->ctrl->dma_wait_queued)
+			continue;
+		flush_workqueue(display->dma_cmd_workq);
+		cancel_work_sync(&ctrl->ctrl->dma_cmd_wait);
+		ctrl->ctrl->dma_wait_queued = false;
+	}
 
 	rc = dsi_display_link_clk_force_update_ctrl(display->dsi_clk_handle);
 
@@ -5380,159 +5380,6 @@ error:
 	return rc;
 }
 
-static ssize_t sysfs_dynamic_dsi_clk_read(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	int rc = 0;
-	struct dsi_display *display;
-	struct dsi_display_ctrl *m_ctrl;
-	struct dsi_ctrl *ctrl;
-
-	display = dev_get_drvdata(dev);
-	if (!display) {
-		DSI_ERR("Invalid display\n");
-		return -EINVAL;
-	}
-
-	mutex_lock(&display->display_lock);
-
-	m_ctrl = &display->ctrl[display->cmd_master_idx];
-	ctrl = m_ctrl->ctrl;
-	if (ctrl)
-		display->cached_clk_rate = ctrl->clk_freq.byte_clk_rate
-					     * 8;
-
-	rc = snprintf(buf, PAGE_SIZE, "%d\n", display->cached_clk_rate);
-	DSI_DEBUG("%s: read dsi clk rate %d\n", __func__,
-		display->cached_clk_rate);
-
-	mutex_unlock(&display->display_lock);
-
-	return rc;
-}
-
-static ssize_t sysfs_dynamic_dsi_clk_write(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	int rc = 0;
-	int clk_rate;
-	struct dsi_display *display;
-
-	display = dev_get_drvdata(dev);
-	if (!display) {
-		DSI_ERR("Invalid display\n");
-		return -EINVAL;
-	}
-
-	rc = kstrtoint(buf, DSI_CLOCK_BITRATE_RADIX, &clk_rate);
-	if (rc) {
-		DSI_ERR("%s: kstrtoint failed. rc=%d\n", __func__, rc);
-		return rc;
-	}
-
-	if (display->panel->panel_mode != DSI_OP_CMD_MODE) {
-		DSI_ERR("only supported for command mode\n");
-		return -ENOTSUPP;
-	}
-
-	DSI_INFO("%s: bitrate param value: '%d'\n", __func__, clk_rate);
-
-	mutex_lock(&display->display_lock);
-	mutex_lock(&dsi_display_clk_mutex);
-
-	rc = dsi_display_dynamic_clk_configure_cmd(display, clk_rate);
-	if (rc)
-		DSI_ERR("Failed to configure dynamic clk\n");
-	else
-		rc = count;
-
-	mutex_unlock(&dsi_display_clk_mutex);
-	mutex_unlock(&display->display_lock);
-
-	return rc;
-
-}
-
-static ssize_t sysfs_hbm_read(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct dsi_display *display = dev_get_drvdata(dev);
-	if (!display->panel)
-		return 0;
-
-	return scnprintf(buf, PAGE_SIZE, "%d\n", display->panel->hbm_mode);
-}
-
-static ssize_t sysfs_hbm_write(struct device *dev,
-	    struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct dsi_display *display = dev_get_drvdata(dev);
-	int ret, hbm_mode;
-        int bl_lvl_before_hbm = display->panel->bl_config.bl_level;
-
-	if (!display->panel)
-		return -EINVAL;
-
-	ret = kstrtoint(buf, 10, &hbm_mode);
-	if (ret) {
-		pr_err("kstrtoint failed. ret=%d\n", ret);
-		return ret;
-	}
-
-	mutex_lock(&display->display_lock);
-
-	display->panel->hbm_mode = hbm_mode;
-	if (!dsi_panel_initialized(display->panel))
-		goto error;
-
-	ret = dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_CORE_CLK, DSI_CLK_ON);
-	if (ret) {
-		pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
-		       display->name, ret);
-		goto error;
-	}
-
-	ret = dsi_panel_apply_hbm_mode(display->panel);
-	if (ret)
-		pr_err("unable to set hbm mode\n");
-
-	if (hbm_mode == 0) {
-		/* hbm off cmd sets brightness to an
-		 * arbitrary value; setting it to the right value needs to be done
-		 * separately */
-		dsi_panel_set_backlight(display->panel,bl_lvl_before_hbm);
-	}
-
-	ret = dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_CORE_CLK, DSI_CLK_OFF);
-	if (ret) {
-		pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
-		       display->name, ret);
-		goto error;
-	}
-error:
-	mutex_unlock(&display->display_lock);
-	return ret == 0 ? count : ret;
-}
-
-static DEVICE_ATTR(hbm, 0644,
-			sysfs_hbm_read,
-			sysfs_hbm_write);
-
-
-static DEVICE_ATTR(dynamic_dsi_clock, 0644,
-			sysfs_dynamic_dsi_clk_read,
-			sysfs_dynamic_dsi_clk_write);
-
-static struct attribute *dynamic_dsi_clock_fs_attrs[] = {
-	&dev_attr_dynamic_dsi_clock.attr,
-	NULL,
-};
-static struct attribute_group dynamic_dsi_clock_fs_attrs_group = {
-	.attrs = dynamic_dsi_clock_fs_attrs,
-};
-
 static ssize_t sysfs_fod_ui_read(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
@@ -5554,71 +5401,8 @@ static DEVICE_ATTR(fod_ui, 0444,
 			sysfs_fod_ui_read,
 			NULL);
 
-#ifdef CONFIG_DRM_SDE_EXPO
-static ssize_t sysfs_dimlayer_exposure_read(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	struct dsi_display *display;
-	struct dsi_panel *panel;
-	bool status;
-
-	display = dev_get_drvdata(dev);
-	if (!display) {
-		pr_err("Invalid display\n");
-		return -EINVAL;
-	}
-
-	panel = display->panel;
-
-	mutex_lock(&panel->panel_lock);
-	status = panel->dimlayer_exposure;
-	mutex_unlock(&panel->panel_lock);
-
-	return snprintf(buf, PAGE_SIZE, "%d\n", status);
-}
-
-static ssize_t sysfs_dimlayer_exposure_write(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct dsi_display *display;
-	struct dsi_panel *panel;
-	struct drm_connector *connector = NULL;
-	bool status;
-	int rc = 0;
-
-	display = dev_get_drvdata(dev);
-	if (!display) {
-		pr_err("Invalid display\n");
-		return -EINVAL;
-	}
-
-	rc = kstrtobool(buf, &status);
-	if (rc) {
-		pr_err("%s: kstrtobool failed. rc=%d\n", __func__, rc);
-		return rc;
-	}
-
-	panel = display->panel;
-
-	panel->dimlayer_exposure = status;
-	dsi_display_set_backlight(connector, display, panel->bl_config.bl_level);
-
-	return count;
-}
-#endif
-
-#ifdef CONFIG_DRM_SDE_EXPO
-static DEVICE_ATTR(dimlayer_exposure, 0644,
-			sysfs_dimlayer_exposure_read,
-			sysfs_dimlayer_exposure_write);
-#endif
-
 static struct attribute *display_fs_attrs[] = {
 	&dev_attr_fod_ui.attr,
-	&dev_attr_hbm.attr,
-#ifdef CONFIG_DRM_SDE_EXPO
-	&dev_attr_dimlayer_exposure.attr,
-#endif
 	NULL,
 };
 
@@ -5631,14 +5415,6 @@ static int dsi_display_sysfs_init(struct dsi_display *display)
 	int rc = 0;
 	struct device *dev = &display->pdev->dev;
 
-	if (display->panel->panel_mode == DSI_OP_CMD_MODE)
-		rc = sysfs_create_group(&dev->kobj,
-			&dynamic_dsi_clock_fs_attrs_group);
-	if (rc) {
-		pr_err("failed to create dynamic dsi clock attributes");
-		return rc;
-	}
-
 	rc = sysfs_create_group(&dev->kobj, &display_fs_attrs_group);
 	if (rc)
 		pr_err("failed to create display device attributes");
@@ -5649,10 +5425,6 @@ static int dsi_display_sysfs_init(struct dsi_display *display)
 static int dsi_display_sysfs_deinit(struct dsi_display *display)
 {
 	struct device *dev = &display->pdev->dev;
-
-	if (display->panel->panel_mode == DSI_OP_CMD_MODE)
-		sysfs_remove_group(&dev->kobj,
-			&dynamic_dsi_clock_fs_attrs_group);
 
 	sysfs_remove_group(&dev->kobj,
 		&display_fs_attrs_group);
@@ -5740,7 +5512,7 @@ static int dsi_display_bind(struct device *dev,
 
 	rc = dsi_display_sysfs_init(display);
 	if (rc) {
-		DSI_ERR("[%s] sysfs init failed, rc=%d\n", display->name, rc);
+		pr_err("[%s] sysfs init failed, rc=%d\n", display->name, rc);
 		goto error;
 	}
 
@@ -5880,7 +5652,6 @@ static int dsi_display_bind(struct device *dev,
 
 	/* register te irq handler */
 	dsi_display_register_te_irq(display);
-
 
 	rc = mi_disp_lhbm_attach_primary_dsi_display(display);
 	if (rc)
@@ -8351,9 +8122,10 @@ int dsi_display_enable(struct dsi_display *display)
 
 		if (display->panel->mi_cfg.is_tddi_flag) {
 			rc = dsi_panel_lockdowninfo_param_read(display->panel);
-			if (!rc)
+			if (!rc) {
 				DSI_ERR("[%s] failed to read lockdowninfo para, rc=%d\n",
 					display->name, rc);
+			}
 		}
 
 		return 0;
@@ -8393,21 +8165,14 @@ int dsi_display_enable(struct dsi_display *display)
 	}
 
 	if (mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) {
-		if ((mode->timing.refresh_rate != 60)
-			&& ((display->panel->mi_cfg.panel_id >> 8) == 0x4C3341004202)
-				&& (display->panel->mi_cfg.dc_enable == true)) {
-			mi_dsi_panel_dc_switch(display->panel, false);
-		}
-
-		rc = dsi_panel_post_switch(display->panel);
+		rc = dsi_panel_switch(display->panel);
 		if (rc) {
 			DSI_ERR("[%s] failed to switch DSI panel mode, rc=%d\n",
 				   display->name, rc);
 			goto error;
 		}
 
-		if (((display->panel->mi_cfg.panel_id >> 8) == 0x4A3153004202)
-				|| ((display->panel->mi_cfg.panel_id >> 8) == 0x4C3341004202)) {
+		if ((display->panel->mi_cfg.panel_id >> 8) == 0x4A3153004202) {
 
 			rc = dsi_panel_dc_switch(display->panel);
 			if (rc) {

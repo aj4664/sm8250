@@ -86,7 +86,7 @@
 			linux,input-type = <1>;
 			linux,code = <KEY_VOLUMEUP>;
 			gpio-key,wakeup;
-			debounce-interval = <32>;
+			debounce-interval = <15>;
 			linux,can-disable;
 		};
 	};
@@ -134,6 +134,7 @@
 		board-sensor = "VIRTUAL-SENSOR";
 		ambient-sensor = "ABT-SENSOR";
 	};
+
 	irda_regulator: irda-regulator {
 		compatible = "regulator-dummy";
 		regulator-name = "irda_regulator";
@@ -700,28 +701,6 @@
 	qcom,mdss-dsi-bl-max-level = <2047>;
 	qcom,mdss-brightness-max-level = <2047>;
 	qcom,mdss-brightness-init-level = <410>;
-	qcom,platform-te-gpio = <&tlmm 66 0>;
-	qcom,platform-reset-gpio = <&tlmm 75 0>;
-};
-
-&dsi_m82_36_02_0a_dual_dphy_video {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_m82>;
-	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
-	qcom,mdss-dsi-bl-min-level = <2>;
-	qcom,mdss-dsi-bl-max-level = <4095>;
-	qcom,mdss-brightness-max-level = <4095>;
-	qcom,mdss-brightness-init-level = <307>;
-	qcom,platform-te-gpio = <&tlmm 66 0>;
-	qcom,platform-reset-gpio = <&tlmm 75 0>;
-};
-
-&dsi_m82_42_02_0b_dual_dphy_video {
-	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_m82>;
-	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
-	qcom,mdss-dsi-bl-min-level = <2>;
-	qcom,mdss-dsi-bl-max-level = <4095>;
-	qcom,mdss-brightness-max-level = <4095>;
-	qcom,mdss-brightness-init-level = <307>;
 	qcom,platform-te-gpio = <&tlmm 66 0>;
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
 };

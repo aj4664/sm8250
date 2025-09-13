@@ -12,6 +12,7 @@
  * Free Software Foundation;  either version 2 of the  License, or (at your
  * option) any later version.
  */
+#define DEBUG
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/i2c.h>

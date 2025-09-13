@@ -33,7 +33,7 @@ static int bd_cdev_get_max_brightness_clone(struct thermal_cooling_device *cdev,
 }
 
 static int bd_cdev_get_cur_brightness_clone(struct thermal_cooling_device *cdev,
-					unsigned long *state)
+                                        unsigned long *state)
 {
 	struct sde_clone_cdev *cdev_clone;
 	struct backlight_device *bd;

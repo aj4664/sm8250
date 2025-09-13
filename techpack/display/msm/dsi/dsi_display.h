@@ -278,11 +278,6 @@ struct dsi_display {
 	u32 clk_gating_config;
 	bool queue_cmd_waits;
 	struct workqueue_struct *dma_cmd_workq;
-
-	int tx_cmd_buf_ndx;
-	struct dsi_panel_cmd_set cmd_set;
-
-	bool enabled;
 	atomic_t fod_ui;
 };
 
@@ -759,8 +754,6 @@ int dsi_display_get_panel_vfp(void *display,
 int dsi_display_cmd_engine_enable(struct dsi_display *display);
 int dsi_display_cmd_engine_disable(struct dsi_display *display);
 int dsi_host_alloc_cmd_tx_buffer(struct dsi_display *display);
-
-char *dsi_display_get_cmdline_panel_info(void);
 
 int dsi_display_hbm_set_disp_param(struct drm_connector *connector,
 				u32 param_type);
