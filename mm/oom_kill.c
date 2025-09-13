@@ -608,7 +608,7 @@ static int dump_task(struct task_struct *p, void *arg)
  * State information includes task's pid, uid, tgid, vm size, rss,
  * pgtables_bytes, swapents, oom_score_adj value, and name.
  */
-void dump_tasks(struct mem_cgroup *memcg, const nodemask_t *nodemask)
+// void dump_tasks(struct mem_cgroup *memcg, const nodemask_t *nodemask)
 static void dump_tasks(struct oom_control *oc)
 {
 	pr_info("Tasks state (memory values in pages):\n");
@@ -651,9 +651,9 @@ static void dump_header(struct oom_control *oc, struct task_struct *p)
 
 		show_mem_call_notifiers();
 	}
-
+	
 	if (sysctl_oom_dump_tasks)
-		dump_tasks(oc);
+	dump_tasks(oc->memcg, oc->nodemask);
 }
 
 /*
@@ -904,9 +904,12 @@ static void mark_oom_victim(struct task_struct *tsk)
 	/* OOM killer might race with memcg OOM */
 	if (test_and_set_tsk_thread_flag(tsk, TIF_MEMDIE))
 		return;
-
+		
 	/* oom_mm is bound to the signal struct life time. */
-	__mark_oom_victim(tsk);
+	if (!cmpxchg(&tsk->signal->oom_mm, NULL, mm)) {
+		mmgrab(tsk->signal->oom_mm);
+		set_bit(MMF_OOM_VICTIM, &mm->flags);
+	}
 
 	/*
 	 * Make sure that the task is woken up from uninterruptible sleep
