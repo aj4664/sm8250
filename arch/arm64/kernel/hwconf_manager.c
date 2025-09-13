@@ -202,7 +202,7 @@ static char *hw_item_print(hw_item *item, int ident, int *offset)
 	return print_buf;
 }
 
-static char *hw_item_dump(void)
+static char *hw_item_dump()
 {
 	int offset = 0;
 

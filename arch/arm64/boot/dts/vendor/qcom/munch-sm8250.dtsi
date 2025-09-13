@@ -550,10 +550,8 @@ And public attribution of xiaomi platforms(like L11R and so and)
 	qcom,chg-warm-th= <480>;
 	qcom,chg-cool-th= <150>;
 	//qcom,suspend-input-on-debug-batt;
-	pinctrl-names = "default", "smb5_active", "smb5_suspend";
-	pinctrl-0 = <&vbus_disable_suspend>;
 	qcom,usbpd-phandle = <&pm8150b_pdphy>;
-	qcom,battery-data = <&munch_batterydata>;
+	qcom,battery-data = <&umi_batterydata>;
 	//mi,fcc-batt-unverify-ua = <2000000>;
 	mi,support-ffc;
 	qcom,lpd-disable;
@@ -670,7 +668,7 @@ And public attribution of xiaomi platforms(like L11R and so and)
 		status = "ok";
 	};
 */
-	munch_batterydata: qcom,battery-data {
+	umi_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
 		#include "jeita-step-cfg-munch.dtsi"
 	};
