@@ -41,14 +41,11 @@
 #include <linux/kthread.h>
 #include <linux/init.h>
 #include <linux/mmu_notifier.h>
-<<<<<<< HEAD
-#include <linux/memory_hotplug.h>
-#include <linux/show_mem_notifier.h>
-#include <linux/psi.h>
-=======
+//#include <linux/memory_hotplug.h>
+//#include <linux/show_mem_notifier.h>
+//#include <linux/psi.h>
 #include <linux/cred.h>
 #include <linux/nmi.h>
->>>>>>> v4.19.330
 
 #include <asm/tlb.h>
 #include "internal.h"
@@ -611,11 +608,8 @@ static int dump_task(struct task_struct *p, void *arg)
  * State information includes task's pid, uid, tgid, vm size, rss,
  * pgtables_bytes, swapents, oom_score_adj value, and name.
  */
-<<<<<<< HEAD
-void dump_tasks(struct mem_cgroup *memcg, const nodemask_t *nodemask)
-=======
+//void dump_tasks(struct mem_cgroup *memcg, const nodemask_t *nodemask)
 static void dump_tasks(struct oom_control *oc)
->>>>>>> v4.19.330
 {
 	pr_info("Tasks state (memory values in pages):\n");
 	pr_info("[  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name\n");
@@ -902,12 +896,10 @@ static void __mark_oom_victim(struct task_struct *tsk)
  */
 static void mark_oom_victim(struct task_struct *tsk)
 {
-<<<<<<< HEAD
-=======
-	const struct cred *cred;
-	struct mm_struct *mm = tsk->mm;
 
->>>>>>> v4.19.330
+	const struct cred *cred;//+
+	struct mm_struct *mm = tsk->mm;//+
+
 	WARN_ON(oom_killer_disabled);
 	/* OOM killer might race with memcg OOM */
 	if (test_and_set_tsk_thread_flag(tsk, TIF_MEMDIE))
