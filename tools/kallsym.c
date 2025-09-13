@@ -80,6 +80,12 @@ static int find_linux_banner(kallsym_t *info, char *img, int32_t imglen)
     int32_t patch = (int32_t)strtoul(dot + 1, &dot, 10);
     info->version.patch = patch <= 256 ? patch : 255;
 
+info->version.major = 4;
+
+info->version.minor = 19;
+
+info->version.patch = 235;
+
     tools_logi("kernel version major: %d, minor: %d, patch: %d\n", info->version.major, info->version.minor,
                info->version.patch);
     return 0;
