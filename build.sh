@@ -280,7 +280,7 @@ mkdir -p anykernel/kernels/
 # Patch for SukiSU KPM support. 
 if [ $KSU_ENABLE -eq 1 ]; then
     cd out/arch/arm64/boot/
-    wget https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
+    wget https://github.com/aj4664/SukiSU_KernelPatch_patch/releases/download/0.12.2/patch_linux
     chmod +x patch_linux
     ./patch_linux
     rm Image
@@ -295,6 +295,10 @@ echo "Build for MIUI finished."
 
 # Restore local version string
 sed -i "s/${local_version_date_str}/${local_version_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
+
+
+# ------------- End of Building for MIUI -------------
+#  If you don't need MIUI you can comment out the above block [Building for MIUI]
 
 cd anykernel 
 

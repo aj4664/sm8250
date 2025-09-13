@@ -6,7 +6,7 @@
 set -e
 
 TOOLCHAIN_PATH=$HOME/proton-clang/proton-clang-20210522/bin
-GIT_COMMIT_ID="1"
+GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD)
 TARGET_DEVICE=$1
 
 if [ -z "$1" ]; then
@@ -295,6 +295,10 @@ echo "Build for MIUI finished."
 
 # Restore local version string
 sed -i "s/${local_version_date_str}/${local_version_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
+
+
+# ------------- End of Building for MIUI -------------
+#  If you don't need MIUI you can comment out the above block [Building for MIUI]
 
 cd anykernel 
 
