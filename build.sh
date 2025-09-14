@@ -6,7 +6,7 @@
 set -e
 
 TOOLCHAIN_PATH=$HOME/proton-clang/proton-clang-20210522/bin
-GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD)
+GIT_COMMIT_ID="1"
 TARGET_DEVICE=$1
 
 if [ -z "$1" ]; then
@@ -92,7 +92,6 @@ fi
 
 echo "Cleaning..."
 
-rm -rf out/
 rm -rf anykernel/
 
 echo "Clone AnyKernel3 for packing kernel (repo: https://github.com/liyafe1997/AnyKernel3)"
@@ -116,7 +115,6 @@ sed -i "s/${local_version_str}/${local_version_date_str}/g" arch/arm64/configs/$
 
 
 echo "Clearning [out/] and build for MIUI....."
-rm -rf out/
 
 dts_source=arch/arm64/boot/dts/vendor/qcom
 
