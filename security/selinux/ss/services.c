@@ -952,6 +952,181 @@ static void avd_init(struct selinux_state *state, struct av_decision *avd)
 	avd->flags = 0;
 }
 
+/*
+ * KernelSU upstream selinux_hide exposes backup_sepolicy while it keeps a
+ * baseline policy copy. Prefer that policy when it exists; fallback rules are
+ * only for older KSU/SUSFS pins without the upstream backup policy.
+ */
+
+struct selinux_hidden_av_rule {
+	const char *stype;
+	const char *ttype;
+	const char *tclass;
+	const char *perm;
+};
+
+static const struct selinux_hidden_av_rule selinux_hidden_av_rules[] = {
+	{ "system_server", "system_server", "process", "execmem" },
+	{ "fsck_untrusted", "fsck_untrusted", "capability", "sys_admin" },
+	{ "shell", "su", "process", "transition" },
+	{ "adbd", "adbroot", "binder", "call" },
+	{ "untrusted_app", "magisk", "binder", "call" },
+	{ "untrusted_app", "magisk_file", "file", "read" },
+	{ "rootfs", "tmpfs", "filesystem", "associate" },
+	{ "kernel", "tmpfs", "fifo_file", "open" },
+	{ "untrusted_app", "ksu", "binder", "call" },
+	{ "untrusted_app", "ksu_file", "file", "read" },
+	{ "kernel", "adb_data_file", "file", "read" },
+	{ "untrusted_app", "lsposed_file", "file", "read" },
+	{ "system_server", "apk_data_file", "file", "execute" },
+	{ "untrusted_app", "xposed_data", "file", "read" },
+	{ "dex2oat", "dex2oat_exec", "file", "execute_no_trans" },
+	{ "zygote", "adb_data_file", "dir", "search" },
+};
+
+static const char * const selinux_hidden_context_types[] = {
+	"su",
+	"adbroot",
+	"ksu",
+	"ksu_file",
+	"magisk",
+	"magisk_file",
+	"lsposed_file",
+	"xposed_data",
+	"xposed_file",
+};
+
+static bool selinux_hidden_av_query_caller(struct policydb *policydb,
+					   struct sidtab *sidtab)
+{
+	struct context *ccontext;
+	const char *ctype;
+
+	ccontext = sidtab_search(sidtab, current_sid());
+	if (!ccontext)
+		return false;
+
+	ctype = sym_name(policydb, SYM_TYPES, ccontext->type - 1);
+
+	return ctype && !strcmp(ctype, "app_zygote");
+}
+
+static bool selinux_hidden_context_has_type(const char *scontext,
+					    u32 scontext_len,
+					    const char *type)
+{
+	const char *end;
+	const char *p;
+	const char *type_start;
+	size_t field_len;
+	unsigned int fields = 0;
+
+	end = scontext + strnlen(scontext, scontext_len);
+	p = scontext;
+	while (p < end && fields < 2) {
+		if (*p == ':')
+			fields++;
+		p++;
+	}
+	if (fields < 2 || p >= end)
+		return false;
+
+	type_start = p;
+	while (p < end && *p != ':')
+		p++;
+
+	field_len = p - type_start;
+	return field_len == strlen(type) &&
+	       !strncmp(type_start, type, field_len);
+}
+
+static bool selinux_hide_context_validity_query(struct policydb *policydb,
+						struct sidtab *sidtab,
+						const char *scontext,
+						u32 scontext_len)
+{
+	unsigned int i;
+
+	if (!selinux_hidden_av_query_caller(policydb, sidtab))
+		return false;
+
+	for (i = 0; i < ARRAY_SIZE(selinux_hidden_context_types); i++) {
+		if (selinux_hidden_context_has_type(
+			    scontext, scontext_len,
+			    selinux_hidden_context_types[i]))
+			return true;
+	}
+
+	return false;
+}
+
+static u32 selinux_perm_to_av(struct class_datum *tclass_datum,
+			      const char *perm)
+{
+	struct perm_datum *pdatum;
+
+	pdatum = hashtab_search(tclass_datum->permissions.table, perm);
+	if (!pdatum && tclass_datum->comdatum)
+		pdatum = hashtab_search(tclass_datum->comdatum->permissions.table,
+				       perm);
+
+	if (!pdatum || !pdatum->value || pdatum->value > 32)
+		return 0;
+
+	return 1U << (pdatum->value - 1);
+}
+
+
+
+static void selinux_hide_av_query_rules(struct policydb *policydb,
+					struct sidtab *sidtab,
+					struct context *scontext,
+					struct context *tcontext,
+					u16 tclass,
+					struct av_decision *avd)
+{
+	struct class_datum *tclass_datum;
+	const char *stype;
+	const char *ttype;
+	const char *tclass_name;
+	u32 perm;
+	unsigned int i;
+
+	if (!tclass || tclass > policydb->p_classes.nprim)
+		return;
+
+	if (!avd->allowed)
+		return;
+
+	if (!selinux_hidden_av_query_caller(policydb, sidtab))
+		return;
+
+	tclass_datum = policydb->class_val_to_struct[tclass - 1];
+	tclass_name = sym_name(policydb, SYM_CLASSES, tclass - 1);
+	stype = sym_name(policydb, SYM_TYPES, scontext->type - 1);
+	ttype = sym_name(policydb, SYM_TYPES, tcontext->type - 1);
+	if (!stype || !ttype || !tclass_name)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(selinux_hidden_av_rules); i++) {
+		const struct selinux_hidden_av_rule *rule;
+
+		rule = &selinux_hidden_av_rules[i];
+		if (strcmp(rule->stype, stype) ||
+		    strcmp(rule->ttype, ttype) ||
+		    strcmp(rule->tclass, tclass_name))
+			continue;
+
+		perm = selinux_perm_to_av(tclass_datum, rule->perm);
+		if (!perm)
+			continue;
+
+		avd->allowed &= ~perm;
+		avd->auditallow &= ~perm;
+		avd->auditdeny |= perm;
+	}
+}
+
 void services_compute_xperms_decision(struct extended_perms_decision *xpermd,
 					struct avtab_node *node)
 {
@@ -1205,6 +1380,8 @@ void security_compute_av_user(struct selinux_state *state,
 
 	context_struct_compute_av(policydb, scontext, tcontext, tclass, avd,
 				  NULL);
+	selinux_hide_av_query_rules(policydb, sidtab, scontext, tcontext,
+				    tclass, avd);
  out:
 	read_unlock(&state->ss->policy_rwlock);
 	return;
@@ -1537,6 +1714,14 @@ static int security_context_to_sid_core(struct selinux_state *state,
 	read_lock(&state->ss->policy_rwlock);
 	policydb = &state->ss->policydb;
 	sidtab = state->ss->sidtab;
+	
+	if (!force &&
+	    selinux_hide_context_validity_query(policydb, sidtab, scontext2,
+					       scontext_len)) {
+		rc = -EINVAL;
+		goto out_unlock;
+	}
+	
 	rc = string_to_context_struct(policydb, sidtab, scontext2,
 				      &context, def_sid);
 	if (rc == -EINVAL && force) {
