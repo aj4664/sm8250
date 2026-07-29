@@ -107,7 +107,7 @@ make $MAKE_ARGS ${TARGET_DEVICE}_defconfig
 if [ $KSU_ENABLE -eq 1 ]; then
     scripts/config --file out/.config \
     -e KSU \
-    -e KSU_MANUAL_HOOK \
+    -e KSU_MULTI_MANAGER_SUPPORT \
     -e KSU_SUSFS \
     -e KSU_SUSFS_SUS_PATH \
     -e KSU_SUSFS_SUS_MOUNT \
@@ -117,8 +117,8 @@ if [ $KSU_ENABLE -eq 1 ]; then
     -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
     -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
     -e KSU_SUSFS_OPEN_REDIRECT \
-    -e KSU_SUSFS_SUS_MAP
-#    -e KPM
+    -e KSU_SUSFS_SUS_MAP \
+    -e KPM
 else
     scripts/config --file out/.config -d KSU
 fi
@@ -126,22 +126,31 @@ fi
 
 scripts/config --file out/.config \
     --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
-    -d PERF_CRITICAL_RT_TASK	\
-    -d SF_BINDER		\
-    -d DEBUG_FS \
-    -d MIGT_ENERGY_MODEL \
-    -d KPERFEVENTS \
-    -d PERF_HUMANTASK \
-    -e XIAOMI_MIUI \
-    -e MI_MEMORY_SYSFS \
-    -d MI_FRAGMENTION \
-    -d PERF_HELPER \
-    -d BOOTUP_RECLAIM \
-    -e PACKAGE_RUNTIME_INFO \
-    -e MILLET \
+    -e PERF_CRITICAL_RT_TASK	\
+    -e SF_BINDER		\
+    -e OVERLAY_FS		\
     -e MIGT \
+    -e MIGT_ENERGY_MODEL \
+    -e MIHW \
+    -e PACKAGE_RUNTIME_INFO \
+    -e BINDER_OPT \
+    -e KPERFEVENTS \
+    -e MILLET \
+    -e PERF_HUMANTASK \
+    -d LTO_CLANG \
+    -e LTO_NONE \
+    -e SF_BINDER \
+    -e XIAOMI_MIUI \
+    -d MI_MEMORY_SYSFS \
+    -e TASK_DELAY_ACCT \
     -e MIUI_ZRAM_MEMORY_TRACKING \
-    -d RTMM \
+    -e MI_FRAGMENTION \
+    -e PERF_HELPER \
+    -e BOOTUP_RECLAIM \
+    -e MI_RECLAIM \
+    -e RTMM \
+    -d REKERNEL \
+    -d REKERNEL_NETWORK
 
 make $MAKE_ARGS -j$(nproc)
 
