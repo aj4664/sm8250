@@ -5,8 +5,6 @@
 # Ensure the script exits on error
 set -e
 
-TOOLCHAIN_PATH=$HOME/proton-clang/proton-clang-20210522/bin
-GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD)
 TARGET_DEVICE=$1
 
 if [ -z "$1" ]; then
@@ -91,7 +89,7 @@ echo "TARGET_DEVICE: $TARGET_DEVICE"
 
 if [ $KSU_ENABLE -eq 1 ]; then
     echo "KSU is enabled"
-    curl -LSs "https://github.com/liyafe1997/SukiSU-Ultra/raw/4ff14cf0051d04209c4abd5027d99d8e7780ef5b/kernel/setup.sh" | bash -s f4863b20cc8dc0f8cc67418980f022e43014b598
+
 else
     echo "KSU is disabled"
 fi
@@ -99,30 +97,15 @@ fi
 
 echo "Cleaning..."
 
-rm -rf out/
-rm -rf anykernel/
 
 echo "Clone AnyKernel3 for packing kernel (repo: https://github.com/liyafe1997/AnyKernel3)"
 git clone https://github.com/liyafe1997/AnyKernel3 -b kona --single-branch --depth=1 anykernel
-
-# Add date to local version
-local_version_str="-perf"
-local_version_date_str="-$(date +%Y%m%d)-${GIT_COMMIT_ID}-perf"
-
-sed -i "s/${local_version_str}/${local_version_date_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
-
-# ------------- Building for AOSP -------------
-
-
-# ------------- End of Building for AOSP -------------
-#  If you don't need AOSP you can comment out the above block [Building for AOSP]
 
 
 # ------------- Building for MIUI -------------
 
 
 echo "Clearning [out/] and build for MIUI....."
-rm -rf out/
 
 dts_source=arch/arm64/boot/dts/vendor/qcom
 
@@ -188,22 +171,17 @@ make $MAKE_ARGS ${TARGET_DEVICE}_defconfig
 if [ $KSU_ENABLE -eq 1 ]; then
     scripts/config --file out/.config \
     -e KSU \
-    -e KSU_MANUAL_HOOK \
-    -e KSU_SUSFS_HAS_MAGIC_MOUNT \
-    -d KSU_SUSFS_SUS_PATH \
+    -e KSU_MULTI_MANAGER_SUPPORT \
+    -e KSU_SUSFS \
+    -e KSU_SUSFS_SUS_PATH \
     -e KSU_SUSFS_SUS_MOUNT \
-    -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
-    -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
     -e KSU_SUSFS_SUS_KSTAT \
-    -d KSU_SUSFS_SUS_OVERLAYFS \
-    -e KSU_SUSFS_TRY_UMOUNT \
-    -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT \
     -e KSU_SUSFS_SPOOF_UNAME \
     -e KSU_SUSFS_ENABLE_LOG \
     -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
     -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
-    -d KSU_SUSFS_OPEN_REDIRECT \
-    -d KSU_SUSFS_SUS_SU \
+    -e KSU_SUSFS_OPEN_REDIRECT \
+    -e KSU_SUSFS_SUS_MAP \
     -e KPM
 else
     scripts/config --file out/.config -d KSU
@@ -231,7 +209,6 @@ scripts/config --file out/.config \
     -e PERF_CRITICAL_RT_TASK	\
     -e SF_BINDER		\
     -e OVERLAY_FS		\
-    -d DEBUG_FS \
     -e MIGT \
     -e MIGT_ENERGY_MODEL \
     -e MIHW \
@@ -239,21 +216,21 @@ scripts/config --file out/.config \
     -e BINDER_OPT \
     -e KPERFEVENTS \
     -e MILLET \
-    -d PERF_HUMANTASK \
+    -e PERF_HUMANTASK \
     -d LTO_CLANG \
-    -d LOCALVERSION_AUTO \
+    -e LTO_NONE \
     -e SF_BINDER \
     -e XIAOMI_MIUI \
     -d MI_MEMORY_SYSFS \
     -e TASK_DELAY_ACCT \
     -e MIUI_ZRAM_MEMORY_TRACKING \
-    -d CONFIG_MODULE_SIG_SHA512 \
-    -d CONFIG_MODULE_SIG_HASH \
     -e MI_FRAGMENTION \
     -e PERF_HELPER \
     -e BOOTUP_RECLAIM \
     -e MI_RECLAIM \
     -e RTMM \
+    -d REKERNEL \
+    -d REKERNEL_NETWORK
 
 make $MAKE_ARGS -j$(nproc)
 
@@ -274,85 +251,4 @@ find out/arch/arm64/boot/dts -name '*.dtb' -exec cat {} + >out/arch/arm64/boot/d
 rm -rf ${dts_source}
 mv .dts.bak ${dts_source}
 
-rm -rf anykernel/kernels/
-mkdir -p anykernel/kernels/
-
-# Patch for SukiSU KPM support. 
-if [ $KSU_ENABLE -eq 1 ]; then
-    cd out/arch/arm64/boot/
-    wget https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
-    chmod +x patch_linux
-    ./patch_linux
-    rm Image
-    mv oImage Image
-    cd -
-fi
-
-cp out/arch/arm64/boot/Image anykernel/kernels/
-cp out/arch/arm64/boot/dtb anykernel/kernels/
-
 echo "Build for MIUI finished."
-
-# Restore local version string
-sed -i "s/${local_version_date_str}/${local_version_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
-
-# ------------- End of Building for MIUI -------------
-#  If you don't need MIUI you can comment out the above block [Building for MIUI]
-
-
-cd anykernel 
-
-ZIP_FILENAME=Kernel_MIUI_${TARGET_DEVICE}_${KSU_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3_${GIT_COMMIT_ID}.zip
-
-zip -r9 $ZIP_FILENAME ./* -x .git .gitignore out/ ./*.zip
-
-mv $ZIP_FILENAME ../
-
-cd ..
-
-echo "Done. The flashable zip is: [./$ZIP_FILENAME]"
-
-# 创建输出目录结构并复制文件
-OUTPUT_BASE_DIR="out123"
-DEVICE_DIR="${OUTPUT_BASE_DIR}/${TARGET_DEVICE}"
-
-if [ $KSU_ENABLE -eq 1 ]; then
-    # 如果是KSU版本，创建ksu子目录
-    OUTPUT_DIR="${DEVICE_DIR}/ksu"
-else
-    # 如果不是KSU版本，直接使用设备目录
-    OUTPUT_DIR="${DEVICE_DIR}"
-fi
-
-# 创建输出目录
-mkdir -p ${OUTPUT_DIR}
-
-# 复制文件
-echo "Copying output files to ${OUTPUT_DIR}..."
-cp out/.config ${OUTPUT_DIR}/ 2>/dev/null || echo "Warning: .config not found"
-cp -r out/arch/arm64/boot ${OUTPUT_DIR}/ 2>/dev/null || echo "Warning: boot directory not found"
-cp ./${ZIP_FILENAME} ${OUTPUT_DIR}/ 2>/dev/null || echo "Warning: zip file not found"
-
-echo "All output files have been copied to: ${OUTPUT_DIR}"
-echo "Directory structure:"
-find ${OUTPUT_BASE_DIR} -type f -name "*" | head -20
-
-# 显示复制后的目录结构示例
-echo ""
-echo "示例目录结构:"
-echo "out123/"
-echo "├── cas/"
-echo "│   ├── .config"
-echo "│   ├── boot/"
-echo "│   │   ├── Image"
-echo "│   │   ├── dtb"
-echo "│   │   └── ..."
-echo "│   └── Kernel_MIUI_cas_NoKernelSU_20231001_120000_anykernel3_a1b2c3d4.zip"
-echo "└── umi/"
-echo "    └── ksu/"
-echo "        ├── .config"
-echo "        ├── boot/"
-echo "        │   ├── Image"
-echo "        │   ├── dtb"
-echo "        │   └── ..."
-echo "        └── Kernel_MIUI_umi_SukiSU-SUSFS_20231001_120000_anykernel3_a1b2c3d4.zip"
