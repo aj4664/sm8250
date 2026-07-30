@@ -136,3 +136,6 @@ all.config
 kernel/configs/android-*.cfg
 
 out/
+susfs_inline_hook_patches.sh
+error.log
+*.bak
