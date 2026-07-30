@@ -39,22 +39,15 @@ if [ -z "$KBUILD_BUILD_TIMESTAMP" ]; then
 else
 	TIMESTAMP=$KBUILD_BUILD_TIMESTAMP
 fi
-if test -z "$KBUILD_BUILD_USER"; then
-	LINUX_COMPILE_BY=$(whoami | sed 's/\\/\\\\/')
-else
-	LINUX_COMPILE_BY=$KBUILD_BUILD_USER
-fi
-if test -z "$KBUILD_BUILD_HOST"; then
-	LINUX_COMPILE_HOST=`uname -n`
-else
-	LINUX_COMPILE_HOST=$KBUILD_BUILD_HOST
-fi
 
-UTS_VERSION="#1 SMP PREEMPT Thu Nov 09 16:45:27 CST 2023"
+LINUX_COMPILE_BY="builder"
+LINUX_COMPILE_HOST="pangu-build-component-vendor-267024-dqq3w-tjqmc-69txs"
+
+UTS_VERSION="#1 SMP PREEMPT Wed Jun 5 13:37:11 UTC 2024"
 CONFIG_FLAGS=""
 if [ -n "$SMP" ] ; then CONFIG_FLAGS="SMP"; fi
 if [ -n "$PREEMPT" ] ; then CONFIG_FLAGS="$CONFIG_FLAGS PREEMPT"; fi
-UTS_VERSION="#1 SMP PREEMPT Thu Nov 09 16:45:27 CST 2023"
+UTS_VERSION="#1 SMP PREEMPT Wed Jun 5 13:37:11 UTC 2024"
 
 # Truncate to maximum length
 
@@ -75,7 +68,7 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
 
   LD_VERSION=$($LD -v | head -n1 | sed 's/(compatible with [^)]*)//' \
 		      | sed 's/[[:space:]]*$//')
-  printf '#define LINUX_COMPILER "%s"\n' "$CC_VERSION, $LD_VERSION"
+  printf '#define LINUX_COMPILER "%s"\n' "clang version 10.0.7 for Android NDK, GNU ld (binutils-2.27-bd24d23f) 2.27.0.20170315"
 ) > .tmpcompile
 
 # Only replace the real compile.h if the new one is different,
