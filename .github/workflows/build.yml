@@ -68,7 +68,7 @@ jobs:
 
         # 如果没有填写源码，使用默认源码
         if [ -z "$SOURCE" ]; then
-          SOURCE="https://你的默认源码地址.git"
+          SOURCE="https://github.com/aj4664/sm8250.git"
         fi
 
 
