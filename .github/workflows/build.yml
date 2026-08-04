@@ -3,10 +3,22 @@ name: Build Kernel
 on:
   workflow_dispatch:
     inputs:
+      source:
+        description: 'Kernel Source Git URL (源码地址，可选)'
+        required: false
+        default: ''
+        type: string
+
+      branch:
+        description: 'Kernel Source Branch (源码分支，可选)'
+        required: false
+        default: ''
+        type: string
+
       device:
         description: 'Target Device Code (设备代号)'
         required: true
-        default: 'lmi'
+        default: 'cas'
         type: choice
         options:
           - alioth
@@ -47,6 +59,46 @@ jobs:
       uses: actions/checkout@v7
       with:
         fetch-depth: 1
+
+    - name: Clone Kernel Source
+      run: |
+
+        SOURCE="${{ github.event.inputs.source }}"
+        BRANCH="${{ github.event.inputs.branch }}"
+
+        # 如果没有填写源码，使用默认源码
+        if [ -z "$SOURCE" ]; then
+          SOURCE="https://你的默认源码地址.git"
+        fi
+
+
+        echo "Kernel Source: $SOURCE"
+
+
+        # 没填写分支
+        if [ -z "$BRANCH" ]; then
+
+          echo "Clone default branch"
+
+          git clone \
+            --depth=1 \
+            "$SOURCE" \
+            kernel
+
+
+        # 填写了分支
+        else
+
+          echo "Clone branch: $BRANCH"
+
+          git clone \
+            --depth=1 \
+            --branch "$BRANCH" \
+            --single-branch \
+            "$SOURCE" \
+            kernel
+
+        fi
 
     - name: Set up Environment
       run: |
