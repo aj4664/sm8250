@@ -124,25 +124,6 @@ else
 fi
 
 
-scripts/config --file out/.config \
-    --set-str STATIC_USERMODEHELPER_PATH /system/bin/micd \
-    -d PERF_CRITICAL_RT_TASK	\
-    -d SF_BINDER		\
-    -d DEBUG_FS \
-    -d MIGT_ENERGY_MODEL \
-    -d KPERFEVENTS \
-    -d PERF_HUMANTASK \
-    -e XIAOMI_MIUI \
-    -e MI_MEMORY_SYSFS \
-    -d MI_FRAGMENTION \
-    -d PERF_HELPER \
-    -d BOOTUP_RECLAIM \
-    -e PACKAGE_RUNTIME_INFO \
-    -e MILLET \
-    -e MIGT \
-    -e MIUI_ZRAM_MEMORY_TRACKING \
-    -d RTMM \
-
 make $MAKE_ARGS -j$(nproc)
 
 
