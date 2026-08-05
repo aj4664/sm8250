@@ -55,11 +55,6 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v7
-      with:
-        fetch-depth: 1
-
     - name: Clone Kernel Source
       run: |
 
