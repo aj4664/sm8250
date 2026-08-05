@@ -122,6 +122,7 @@ jobs:
 
     - name: Run Build Script
       run: |
+        cd kernel
         chmod +x build_kernel.sh
         
         ARGS="${{ github.event.inputs.device }}"
